@@ -1649,7 +1649,7 @@ def calculate_moon_times(obsframe,startdate,outtype='dec',verbose=False):
         'decimal' ephem.Date() format (e.g., 43489.99976096985) \n
         'tuple' (e.g., (2019, 1, 26, 11, 59, 39.34779482893646) ) \n  
         'dt' datetime format  (e.g., [datetime.datetime(2021, 4, 15, 14, 56, 33), ...]  )
-     verbose : bool
+    verbose : bool
         Set to True to print the previous moonrise / next moonset info to screen
     
     Returns

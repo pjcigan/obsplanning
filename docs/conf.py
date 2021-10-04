@@ -24,7 +24,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-MOCK_MODULES = ['setuptools', 'multicolorfits', 'pyqt5', 'setup']
+MOCK_MODULES = ['setuptools', 'multicolorfits', 'pyqt5', 'PyQt5','PyQt5.QtGui','PyQt5.QtWidgets', 'pyface.qt','pyface.qt.QtCore', 'traitsui', 'traits', 'setup']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
