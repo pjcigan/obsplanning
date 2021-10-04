@@ -42,6 +42,7 @@ Tools to plan your astronomical observations, from simple conversions of coordin
 * astroquery
 * scipy
 * tqdm
+* multicolorfits
 
 
 - Tested in python 3.7 
@@ -67,6 +68,8 @@ import obsplanning as obs
 
 #e.g., computing target altitude & azimuth from an observer station:
 obs.compute_target_altaz(target,observer,t1,t2,nsteps=1000)
+
+#...
 ```
 
 
@@ -85,6 +88,7 @@ Determine observability of objects in the sky from your observatory, and produce
 - pyephem-based time conversions, observers (telescope), and target source (sky) objects
 - Plotting/visualization tools for target elevation tracks and finder plots
 - Transit time and target visibility calculations for single telescopes or multiple stations (VLBI/VLBA)
+- Basic selection of observable targets from source lists, based on their coordinates. 
 - Miscellaneous coordinate handling, radio astronomy info, and other helpful functions
 
 
@@ -94,7 +98,7 @@ Determine observability of objects in the sky from your observatory, and produce
 
 # Motivation / Backstory
 
-This collection of functions assembled somewhat organically over the years from a variety of different clusters of code I've written for different purposes.  (Early versions of some go back to around 2011!)  As I started getting more and more hands-on with calculations and plots for my own observations, I started writing more and more tools to make those processes more convenient.  There are certainly some very nice tools out in the world (like the venerable staralt), but I wanted some python tools to fit better with my own workflow.  Circa 2017 or so when I started getting serious about planning some observations at the WHT within my own ecosystem of code, I started a simple text file where I dumped all my general functions related to this.  None of the other packages I saw at that time really offered everything I was looking for in one place, so here we are.  As time went by, I added more bits and pieces as they came up, and now there are even some radio interferometry tools as well.  It may look like kind of a mess, but it's my mess.  The current form here is not really a package or object-oriented at all, but rather a collection of functions -- in the future I hope to have enough time and bandwidth to make classes and transform it to a more proper package.  Astropy and other resources definitely do have good tools for planning your observations now, but hopefully the functionality here will at least be complementary. 
+This collection of functions assembled somewhat organically over the years from a variety of different clusters of code I've written for different purposes.  (Early versions of some go back to around 2011!)  As I started getting more and more hands-on with calculations and plots for my own observations, I started writing more and more tools to make those processes more convenient.  There are certainly some very nice tools out in the world (like the venerable staralt), but I wanted some python tools to fit better with my own workflow.  Circa 2017 or so when I started getting serious about planning some observations at the WHT within my own ecosystem of code, I started a simple text file where I dumped all my general functions related to this.  None of the other packages I saw at that time really offered everything I was looking for in one place, so here we are.  As time went by, I added more bits and pieces as they came up, and now there are even some radio interferometry tools as well.  The current form here is not really object-oriented at all, but rather a collection of functions -- in the future I hope to have enough time and bandwidth to refactor these into classes and transform it to a more proper package.  Astropy and other resources definitely do have good tools for planning your observations now, but hopefully the functionality here will at least be complementary. 
 
 Oh, and by the way - once you take your fancy observations with the help of obsplanning, how about making some fancy images using [multicolorfits](https://github.com/pjcigan/multicolorfits)?  Flag me down at a conference or wherever, I'd love to see what works of art you will make.  (Astronomy does have the best pictures in science, after all...)
 
