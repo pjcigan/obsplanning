@@ -1,5 +1,3 @@
---------------
-
 Introduction to working with pyephem and obsplanning objects
 ============================================================
 
@@ -402,7 +400,7 @@ obs.ephemeris\_report :
 
 
 Converting coordinates
-''''''''''''''''''''''
+~~~~~~~~~~~~~~~~~~~~~~
 
 The equatorial coordinates are already accessible with target.ra and
 target.dec, but an ephem.Equatorial class also exists, which is useful

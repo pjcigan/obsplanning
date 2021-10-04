@@ -1648,14 +1648,14 @@ def calculate_moon_times(obsframe,startdate,outtype='dec',verbose=False):
         Desired output format: \n
         'decimal' ephem.Date() format (e.g., 43489.99976096985) \n
         'tuple' (e.g., (2019, 1, 26, 11, 59, 39.34779482893646) ) \n  
-        'dt' datetime format  (e.g., [datetime.datetime(2021, 4, 15, 14, 56, 33),...]  )
+        'dt' datetime format  (e.g., [datetime.datetime(2021, 4, 15, 14, 56, 33), ...]  )
      verbose : bool
         Set to True to print the previous moonrise / next moonset info to screen
     
     Returns
     -------
     moonriseset : list 
-        [moonrise,moonset] times in the specified format
+        The [moonrise,moonset] times in the specified format
     """
     tmpobsframe=obsframe.copy()
     tmpobsframe.date=startdate
@@ -2164,19 +2164,18 @@ def calculate_antenna_visibility_limits(target,station,referenceephemtime,plusmi
         The sky source of interest
     station : ephem.Observer() 
         Telescope/station/observer location from which the observation calculation will be made
-    referenceephemtime : ephem.Date().  
+    referenceephemtime : ephem.Date() 
         Reference observation time.  Can be any time, but expected use is ~ a (mean) transit time. 
     plusminusdays : float
         The number of days to span before/after the reference time
-    elevation_limit_deg : 
+    elevation_limit_deg : float
         The minimum telescope elevation limit to be considered visible/up
     inerpsteps : int
         The number of steps over which to calculate elevations between the reference time and plusminusdays
     alwaysup_fmt : str ('nan','limits')
         The option for handling output when a target is 'always up' with respect to a specified elevation limit \n
-        'nan': return np.nan for the rise/set times
-        'limits': return the limits -- the beginning of the day (-plusminusdays) for previous rise/set,
-            and the end of the day (+plusminusdays) for next rise/set
+        'nan'= return np.nan for the rise/set times \n
+        'limits' = return the limits -- the beginning of the day (-plusminusdays) for previous rise/set, and the end of the day (+plusminusdays) for next rise/set
     timeformat : str  ('ephem', 'mjd', 'dt', or dt strptime format)
         String specifying the format for the returned times \n
         'ephem': return times as pyephem.Date objects (default) [NOTE: these floats are Dublin JD, not MJD] \n
@@ -2194,7 +2193,7 @@ def calculate_antenna_visibility_limits(target,station,referenceephemtime,plusmi
     Example
     -------
     ngc3147=obs.create_ephem_target('NGC3147','10:16:53.65','73:24:02.7') \n
-    prev_setrise,next_setrise = obs.calculate_antenna_visibility_limits(ngc3147,obs.vlbaSC, ephem.Date('2021/08/01 20:36:31'), elevation_limit_deg=15., verbose=False) \n
+    prev_setrise,next_setrise = obs.calculate_antenna_visibility_limits(ngc3147,obs.vlbaSC, ephem.Date('2021/08/01 20:36:31'), elevation_limit_deg=15., verbose=False) 
     """
     try: interpolate
     except: from scipy import interpolate

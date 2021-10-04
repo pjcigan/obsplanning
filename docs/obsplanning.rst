@@ -16,6 +16,7 @@ Installation
 
 
 * Standalone:
+
 Alternatively, can download just the obsplanning.py to run in standalone mode -- this may be a better option if pip installation is not possible on your machine.  It's possible to simply run/execfile obsplanning.py in your python session to load its functions.  You could also add the file location to your local path:
 
 (for .bashrc)

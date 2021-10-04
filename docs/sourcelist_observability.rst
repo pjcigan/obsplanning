@@ -1,5 +1,3 @@
---------------
-
 Determine observable targets from a source list
 ===============================================
 

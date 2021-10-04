@@ -116,7 +116,7 @@ choose to observe at another time:
     #plt.savefig('sunsep_ngc1052_2021.jpg',bbox_inches='tight')
     plt.show(); plt.clf(); plt.close('all')
 
-|Good for most of the year...|
+|Sunseps|
 
 The horizontal dashed line specified here is at 42 degrees, the minimum
 required separation for L-band observations. This shows that as far as
@@ -258,10 +258,10 @@ be noted on the plot with a dotted line.
     obs.plot_VLBA_visibility_tracks(ngc1052,daystart,dayend, dpi=90,  
         savepath='./ngc1052_fullVLBA_september15.jpg', showplot=False, duration_hours=7.5)
 
-| This plots the visibility (elevation) tracks for each VLBA station,
+This plots the visibility (elevation) tracks for each VLBA station,
 and denotes the mean transit time among all stations. Station weights
 can be supplied here for the mean transit time calculation.
-| |Visibility Tracks, all VLBA stations|
+|Visibility Tracks, all VLBA stations|
 
 We can also plot the visibility of all of our planned target sources at
 a single station, to verify that all are near optimal viewing times.
@@ -273,10 +273,10 @@ This is similar to the classic staralt-style visibility plot.
     obs.plot_visibility_tracks([Mrk348,ngc1052,ngc3147], obs.vlbaBR, daystart, dayend, 
         plotmeantransit=False, timezone='auto', savepath='all_vlBR_september15.jpg')
 
-| The first two targets transit closely in time (which we could have
+The first two targets transit closely in time (which we could have
 determined from their RA coordinates), and NGC 3147 is circumpolar and
 visible all day. This set of targets is good for joint observations.
-| |Visibility Tracks, multiple targets|
+|Visibility Tracks, multiple targets|
 
 .. code:: python
 

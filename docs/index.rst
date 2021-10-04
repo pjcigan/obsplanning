@@ -6,6 +6,7 @@
 Welcome to obsplanning's documentation!
 =======================================
 
+:Version: |release|
 
 .. toctree::
    :maxdepth: 2

@@ -15,12 +15,28 @@ import sys
 sys.path.insert(0, os.path.abspath('.'))
 
 
+### Mock import modules
+import sys
+from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['setuptools', 'multicolorfits', 'pyqt5', 'setup']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # -- Project information -----------------------------------------------------
 
 project = 'obsplanning'
 copyright = '2021, Phil Cigan'
 author = 'Phil Cigan'
 
+# The short X.Y version
+version = '1.0'
+# The full version, including alpha/beta/rc tags
+release = '1.0.0'
 
 # -- General configuration ---------------------------------------------------
 
