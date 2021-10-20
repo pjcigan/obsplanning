@@ -2,7 +2,7 @@
 ### v1.0
 ### written by Phil Cigan
 __author__ = "Phil Cigan <pcigan@gmu.edu>"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 """
@@ -309,35 +309,6 @@ def dms2deg(valin):
     valout=ra[0]+ra[1]/60.+ra[2]/3600.
     return valout
 
-###Old implementation of dec2sex and sex2dec:
-#
-#def dec2sex(rain,decin,as_string=False,decimal_places=2):
-#    rmins,rsec=divmod(24./360*rain*3600,60)
-#    rh,rmins=divmod(rmins,60)
-#    #dmins,dsec=divmod(decin*3600,60)
-#    #ddeg,dmins=divmod(dmins,60)
-#    ddeg=int(decin)
-#    dmins=int(abs(decin-ddeg)*60)
-#    dsec=(abs((decin-ddeg)*60)-dmins)*60
-#    if as_string==True: return ['{0}:{1}:{2:0>{4}.{3}f}'.format(int(rh),int(rmins),rsec,decimal_places,decimal_places+3),'{0}:{1}:{2:0>{4}.{3}f}'.format(int(ddeg),int(dmins),dsec,decimal_places,decimal_places+3)]
-#    else: return [int(rh),int(rmins),rsec],[int(ddeg),int(dmins),dsec]
-#
-#def sex2dec(longin,latin,RA=False):
-#    ###Same as before, but now can specify whether longitude is right ascenscion (to multiply by 15) or not
-#    if RA is True: RAfactor=360./24.
-#    else: RAfactor=1.
-#    
-#    if ':' in longin: lo=[float(val)*RAfactor for val in longin.split(':')]
-#    else: lo=[float(val)*RAfactor for val in longin.split(' ')]
-#    longout=lo[0]+lo[1]/60.+lo[2]/3600.
-#    
-#    if ':' in latin: la=[float(val) for val in latin.split(':')]
-#    else: la=[float(val) for val in latin.split(' ')]
-#    if la[0]<0: latout=la[0]-la[1]/60.-la[2]/3600.
-#    else: latout=la[0]+la[1]/60.+la[2]/3600.
-#    
-#    return [longout,latout]
-
 def dec2sex(longin,latin,as_string=False,decimal_places=2,str_format=':',RAhours=True,order='radec'):
     """
     Convert from decimal coordinate pairs to sexagesimal format.
@@ -400,9 +371,12 @@ def dec2sex(longin,latin,as_string=False,decimal_places=2,str_format=':',RAhours
     #latmins,latsecs=divmod(latin*3600,60)
     #latdegs,latmins=divmod(latmins,60)
     latdegs=int(latin)
+    if latdegs==0 and latin<0: latdegs=np.NZERO #Case of -0 degrees
     latmins=int(abs(latin-latdegs)*60)
     latsecs=(abs((latin-latdegs)*60)-latmins)*60
     if as_string==True: 
+        if latdegs==0 and latin<0: latdegstring='-00'
+        else: latdegstring='{0:0>2d}'.format(latdegs)
         #if str_format==':': return ['{0}:{1}:{2:0>{4}.{3}f}'.format(int(longdegs),int(longmins),longsecs,decimal_places,decimal_places+3),'{0}:{1}:{2:0>{4}.{3}f}'.format(int(latdegs),int(latmins),latsecs,decimal_places,decimal_places+3)]
         if str_format==':': delimiters=[':',':','', ':',':','']
         elif str_format==' ': delimiters=[' ',' ','', ' ',' ','']
@@ -414,14 +388,14 @@ def dec2sex(longin,latin,as_string=False,decimal_places=2,str_format=':',RAhours
             delimiters=str_format
             if len(delimiters)<6: 
                 raise Exception('dec2sex(): user-supplied format must have six delimiters.\nSupplied str_format = %s'%str_format)
-        lonstring='{0:02}{5}{1:02}{6}{2:0>{4}.{3}f}{7}'.format( int(longdegs),int(longmins),longsecs, decimal_places, decimal_places+3,  delimiters[0],delimiters[1],delimiters[2], )
-        latstring='{0:02}{5}{1:02}{6}{2:0>{4}.{3}f}{7}'.format( int(latdegs),int(latmins),latsecs, decimal_places, decimal_places+3, delimiters[3],delimiters[4],delimiters[5], )
+        lonstring='{0:0>2d}{5}{1:0>2d}{6}{2:0>{4}.{3}f}{7}'.format( int(longdegs),int(longmins),longsecs, decimal_places, decimal_places+3,  delimiters[0],delimiters[1],delimiters[2], )
+        latstring='{0}{5}{1:0>2d}{6}{2:0>{4}.{3}f}{7}'.format( latdegstring,int(latmins),latsecs, decimal_places, decimal_places+3, delimiters[3],delimiters[4],delimiters[5], )
         if 'lat' in order[:3].lower() or 'dec' in order[:3].lower(): return [latstring,lonstring]
         else: return [lonstring,latstring]
     else: 
         if 'lat' in order[:3].lower() or 'dec' in order[:3].lower(): 
-            return [int(latdegs),int(latmins),latsecs],[int(longdegs),int(longmins),longsecs]
-        else: return [int(longdegs),int(longmins),longsecs],[int(latdegs),int(latmins),latsecs]
+            return [latdegs,int(latmins),latsecs],[int(longdegs),int(longmins),longsecs]
+        else: return [int(longdegs),int(longmins),longsecs],[latdegs,int(latmins),latsecs]
 
 def sex2dec(longin,latin,RAhours=True,order='radec'):
     """
@@ -495,7 +469,7 @@ def sex2dec(longin,latin,RAhours=True,order='radec'):
     else: 
         ### Format example: '-14 19 34.98'
         la=[float(val) for val in latstring.split(' ')]
-    if la[0]<0: latout=la[0]-la[1]/60.-la[2]/3600.
+    if la[0]<0 or '-' in latin.split(' ')[0]: latout=la[0]-la[1]/60.-la[2]/3600.
     else: latout=la[0]+la[1]/60.+la[2]/3600.
     if 'lat' in order[:3].lower() or 'dec' in order[:3].lower(): return [latout,longout]
     else: return [longout,latout]
