@@ -1,6 +1,6 @@
 obsplanning -- a set of python utilities to aid in planning astronomical observations
 
-version 1.0.0
+version 1.0.1
 
 API documentation at [https://obsplanning.readthedocs.io](https://obsplanning.readthedocs.io)
 
@@ -61,23 +61,25 @@ Alternatively, you can simply save a copy of obsplanning.py in a local working d
 
 # Usage
 
-To call it interactively from within e.g., ipython:
-
+Basic usage:
 ```python
 import obsplanning as obs
 
 #e.g., computing target altitude & azimuth from an observer station:
 obs.compute_target_altaz(target,observer,t1,t2,nsteps=1000)
 
-#...
+#etc...
 ```
+
+See the examples in the following section, and the documentation at [https://obsplanning.readthedocs.io](https://obsplanning.readthedocs.io) for much more detail.
 
 
 -----------------------
 
 # Tutorials / Examples 
 
-[Follow this link for some obsplanning tutorials](./examples.md)
+See the documentation at [readthedocs](https://obsplanning.readthedocs.io).  
+Or, see examples on github [here](./examples.md).
 
 
 
@@ -88,7 +90,7 @@ Determine observability of objects in the sky from your observatory, and produce
 - pyephem-based time conversions, observers (telescope), and target source (sky) objects
 - Plotting/visualization tools for target elevation tracks and finder plots
 - Transit time and target visibility calculations for single telescopes or multiple stations (VLBI/VLBA)
-- Basic selection of observable targets from source lists, based on their coordinates. 
+- Simple selection of observable targets from source lists, based on their coordinates. 
 - Miscellaneous coordinate handling, radio astronomy info, and other helpful functions
 
 

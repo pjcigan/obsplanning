@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to obsplanning's documentation!
-=======================================
+Documentation for obsplanning
+=============================
 
-:Version: |release|
+:Version: |version|
 
 .. toctree::
    :maxdepth: 2

@@ -5,7 +5,7 @@ with open('README.md','r') as fh:
 
 setuptools.setup(
     name='obsplanning',
-    version='1.0.0',
+    version='1.0.1',
     url='https://github.com/pjcigan/obsplanning', #'http://obsplanning.readthedocs.io',
     license='MIT',
     author='Phil Cigan',
