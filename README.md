@@ -1,6 +1,6 @@
 obsplanning -- a set of python utilities to aid in planning astronomical observations
 
-version 1.0.1
+version 1.0.2
 
 API documentation at [https://obsplanning.readthedocs.io](https://obsplanning.readthedocs.io)
 
