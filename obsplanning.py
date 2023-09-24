@@ -74,7 +74,7 @@ from tqdm import tqdm
 # Some of the imported packages use this behavior, so is not possible to to this on the fly.  
 # I am opting here to suppress this particular warning type, to avoid these repeated warnings that do 
 # not currently impact the functionality of obsplanning.
-np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+# np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 
 
 ##############################################################################
