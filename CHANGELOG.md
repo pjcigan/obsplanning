@@ -1,5 +1,10 @@
 # 1.0
 
+2023-09-24
+
+* Minor bugfixes (1.0.2)
+    - Removed numpy.warnings filter due to it being removed from recent np versions and crashing obsplanning on import
+
 2021-10-03
 
 * Initial release

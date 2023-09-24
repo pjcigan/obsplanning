@@ -1,8 +1,8 @@
 ### ObsPlanning
 ### v1.0
 ### written by Phil Cigan
-__author__ = "Phil Cigan <pcigan@gmu.edu>"
-__version__ = "1.0.1"
+__author__ = "Phil Cigan"
+__version__ = "1.0.2"
 
 
 """
@@ -75,6 +75,31 @@ from tqdm import tqdm
 # I am opting here to suppress this particular warning type, to avoid these repeated warnings that do 
 # not currently impact the functionality of obsplanning.
 # np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+
+def set_warning_state(action, category=np.VisibleDeprecationWarning, append=True, **kwargs):
+    """
+    Convenience function to control warning messages from within obsplanning, simply
+    a light wrapper for warnings.filterwarnings with a default setting.
+    Particularly useful for treating deprecation warnings when numpy etc gets updated.
+    Users should opt to control warnings with this function's same commands within
+    their own scripts, outside of this module, when possible.
+    
+    Parameters
+    ----------
+    action : one of "default" (print warnings for each location (module + line number)),
+        "error" (return exceptions instead of warnings),
+	    "ignore" (never print matching warnings), 
+        "always" (always print matching warnings)
+        "module" (print the first occurrence of matching warnings for each module, regardless of line number), 
+        "once" (print only the first occurrence of matching warnings, regardless of location )
+    category : the specific warning class to which this action is applied.   
+    append : if True, append to the list of filters
+    kwargs : other keyword args for warnings.filterwarnings -- module, lineno
+    """
+    import warnings
+    warnings.filterwarnings(action=action, category=category, **kwargs)
+
+#set_warning_state('once', category=np.VisibleDeprecationWarning)
 
 
 ##############################################################################
@@ -360,7 +385,7 @@ def dec2sex(longin,latin,as_string=False,decimal_places=2,str_format=':',RAhours
     obs.dec2sex(5.1111, 80.2222, as_string=True, decimal_places=8, str_format=':')  \n
         #-->  ['00:20:26.66400000', '80:13:19.92000000']
     """
-    if RAhours is True: RAfactor=24./360.
+    if RAhours == True: RAfactor=24./360.
     else: RAfactor=1.
     if 'lat' in order[:3].lower() or 'dec' in order[:3].lower():
         #If input coords are given in the order [lat,lon] or [dec,ra], switch them here to ensure longin matches with longitude
@@ -427,7 +452,7 @@ def sex2dec(longin,latin,RAhours=True,order='radec'):
     obs.sex2dec('23h59m59.9999s','-30d15m15.0s')  #--> [359.9999995833333, -30.254166666666666] \n
     obs.sex2dec([23,59,59.9999],[-30,15,15.0])    #--> [359.9999995833333, -30.254166666666666]
     """
-    if RAhours is True or 'h' in longin.lower(): RAfactor=360./24.
+    if RAhours == True or 'h' in longin.lower(): RAfactor=360./24.
     else: RAfactor=1.
     
     ### Check if input was given in list or numpy.array format, and convert to string
@@ -511,7 +536,7 @@ def angulardistance(coords1,coords2,pythag_approx=False,returncomponents=False):
     --------
     obs.angulardistance([146.4247680, -14.3262771], [150.4908485, 55.6797891])  #--> 70.08988039585651 
     """
-    if pythag_approx is True: 
+    if pythag_approx == True: 
         #Reasonable approximation for separations (esp. in RA) of less than ~ 1deg.  
         #Fine for normal small FOV fits images.
         dRA=(coords2[0]-coords1[0])*np.cos(np.mean([coords1[1],coords2[1]])*np.pi/180)
@@ -692,7 +717,7 @@ def calculate_dtnaive_utcoffset(datetime_naive,local_timezone):
     """
     #
     """
-    if tz_string is not '': 
+    if tz_string != '': 
         try: datetime_aware=pytz.timezone(tz_string).localize(datetime_in) #localize is preferable to replace, for DST etc.
         except: datetime_aware=datetime_in.replace(tzinfo=pytz.timezone(tz_string)) #but localize only works on naive (UTC) times
     else: datetime_aware=datetime_in
@@ -900,7 +925,8 @@ def create_local_time_object(time_in, timezone, string_format='%Y/%m/%d %H:%M:%S
     timezone : str, or pytz.timezone
         The local timezone to use.  Olson database names or pytz timezones are accepted. 
     string_format : str
-        The format of time_in when it's given as a string. Passed to dt.datetime.strptime to parse the input values.  Default is '%Y/%m/%d %H:%M:%S', which corresponds to input as 'YYYY/MM/DD hh:mm:ss'
+        The format of time_in when it's given as a string. Passed to dt.datetime.strptime to parse the input values.  
+        Default is '%Y/%m/%d %H:%M:%S', which corresponds to input as 'YYYY/MM/DD hh:mm:ss'
     return_fmt : str ['dt', 'MJD', or 'str']
         The format in which the start time will be returned. Options are: \n
             'dt' or 'datetime' : dt.datetime \n
@@ -1247,7 +1273,7 @@ def create_obstime_array(timestart,timeend,timezone_string='UTC',output_as_utc=F
     
     times_arr=date_linspace(tstart_local,tend_local,n_steps)
     
-    if output_as_utc is True:
+    if output_as_utc == True:
         #Default is to return the array as times in the local timezone.  
         #This step converts if desired output is UTC 
         for i in range(len(times_arr)): 
@@ -3111,8 +3137,8 @@ def optimal_visibility_date(target, observer, obsyear, extra_info=True, verbose=
     
     
     if verbose==True:
-        if target.name is '': target.name='Target'
-        if observer.name is '': observer.name='Observer'
+        if target.name == '': target.name='Target'
+        if observer.name == '': observer.name='Observer'
         print('\nOptimal observing date for %s, from %s, in year %s:'%(target.name,observer.name,obsyear))
         print('  %s  with transit occurring at %s %s time'%(TRSP[0][optind].strftime('%Y/%m/%d'),TRSP[0][optind].strftime('%H:%M:%S'),['local' if local==True else 'UTC'][0]))
         try: risestring=TRSP[1][optind].strftime('%H:%M:%S')
@@ -3615,7 +3641,7 @@ def plot_year_observability(target, observer, obsyear, timezone='auto', time_of_
     #axin3.plot(TRSP[0],moonseps,color='0.6',lw=0.8,ls='--',label='Moon (%i%%)'%(moonseps),alpha=0.5,zorder=1)
     #axin3.plot(TRSP[0],sunseps,color='r',lw=0.8,ls='--',label='Sun',alpha=0.5,zorder=1)
     
-    if savepath is not '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
+    if savepath != '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
     if showplot==True: plt.show()
     plt.clf(); plt.close('all')
 
@@ -3748,7 +3774,7 @@ def plot_year_RST(target, observer, obsyear, timezone='auto', time_of_obs='night
     axin.set_ylabel('Time of day [hour, %s]'%(['local time' if local==True else 'UTC'][0]))
     plt.grid(True,color='0.92')#,'both')
     
-    if savepath is not '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
+    if savepath != '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
     if showplot==True: plt.show()
     plt.clf(); plt.close('all')
 
@@ -3851,7 +3877,7 @@ def plot_year_darktime(target, observer, obsyear, timezone='auto', time_of_obs='
     axin.set_ylabel('Hours of Darkness')
     plt.grid(True,color='0.92')#,'both')
     
-    if savepath is not '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
+    if savepath != '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
     if showplot==True: plt.show()
     plt.clf(); plt.close('all')
 
@@ -4100,10 +4126,10 @@ def plot_night_observing_tracks(target_list, observer, obsstart, obsend, weights
     moonphase_perc=compute_moonphase(obsstart,return_fmt='percent')
     moontimes=calculate_moon_times(observer,obsstart,outtype='dt') #[moonrise,moonset]
     
-    if light_fill is True: 
+    if light_fill == True: 
         #R,S=calculate_rise_set_times_single(target,observer,obsstart,mode='nearest',return_fmt='ephem')
         fill_twilights_light(axin, observer, meanobstime, times_utc, bgcolor='#FEFFCA', timetype='abs')
-    elif light_fill is False: fill_twilights(axin, observer, meanobstime, timetype='abs', bgcolor=bgcolor)
+    elif light_fill == False: fill_twilights(axin, observer, meanobstime, timetype='abs', bgcolor=bgcolor)
     else: pass #Don't do any background fill
     
     transit_times=np.zeros(len(target_list)).astype(str)
@@ -4114,14 +4140,14 @@ def plot_night_observing_tracks(target_list, observer, obsstart, obsend, weights
         #sunseps=sunsep_timearray(target,observer,times_utc)
         moonsep_transit=moonsep_single(target,observer,transit_times[i])
         sunsep_transit=sunsep_single(target,observer,transit_times[i])
-        if target.name is '': target.name='Target_%i'%(i)
+        if target.name == '': target.name='Target_%i'%(i)
         if simpletracks==True: axin.plot(times_utc,alts,lw=1.5,label=target.name+'\n (Moon sep. = %i deg)\n (Sun sep. = %i deg)'%(moonsep_transit,sunsep_transit), zorder=5)
         else: colortrack=axin.scatter(times_utc,alts,c=azs,label=target.name+'\n (Moon sep. = %i deg)'%(moonsep_transit), lw=0, s=10, cmap=azcmap, zorder=5)
         
         axin.axvline(dt.datetime.strptime(transit_times[i],'%Y/%m/%d %H:%M:%S'), ls=':',color='0.5',zorder=-1)
         axin.annotate('Transit time of %s =  %s (UTC)'%(target.name,transit_times[i][-8:]),xy=[dt.datetime.strptime(transit_times[i],'%Y/%m/%d %H:%M:%S'),50.],xytext=[dt.datetime.strptime(transit_times[i],'%Y/%m/%d %H:%M:%S')+dt.timedelta(minutes=-25),50.], va='center', rotation=90, color='0.5')
     
-    if simpletracks is False: fig1.colorbar(colortrack,ax=axin,pad=.12).set_label('Azimuth [deg]')
+    if simpletracks == False: fig1.colorbar(colortrack,ax=axin,pad=.12).set_label('Azimuth [deg]')
     
     axin.plot(times_utc,moon_alts,color='0.6',lw=0.8,ls='--',label='Moon (%i%%)'%(moonphase_perc),alpha=0.5,zorder=1)
     axin.plot(times_utc,sun_alts,color='r',lw=0.8,ls='--',label='Sun',alpha=0.5,zorder=1)
@@ -4265,7 +4291,7 @@ def plot_visibility_tracks_toaxis(target_list, observer, obsstart, obsend, axin,
         #sunseps=sunsep_timearray(target,observer,times_utc)
         moonsep_transit=moonsep_single(target,observer,transit_times[i])
         sunsep_transit=sunsep_single(target,observer,transit_times[i])
-        if target.name is '': target.name='Target_%i'%(i)
+        if target.name == '': target.name='Target_%i'%(i)
         axin.plot(times_utc,alts,lw=1.5,label=target.name+'\n (Moon sep. = %i deg)\n (Sun sep. = %i deg)'%(moonsep_transit,sunsep_transit), zorder=5)
         
         axin.axvline(dt.datetime.strptime(transit_times[i],'%Y/%m/%d %H:%M:%S'), ls=':',color='0.5',zorder=-1)
@@ -4300,7 +4326,7 @@ def plot_visibility_tracks_toaxis(target_list, observer, obsstart, obsend, axin,
     ### Local Time on top axis
     axin3=axin.twiny(); 
     #axin3.set_xlim(axin.get_xlim()) #--> This actually returns slightly different lims!!  Not [0,90]
-    if timezone is not None and 'none' not in timezone.lower():
+    if timezone != None and 'none' not in timezone.lower():
         #if True in [i in timezone.lower() for i in ['auto','calc']]:
         #    #Use tzwhere to compute the timezone based on the observer lat/lon (input in degrees)
         #    try: timezone=tzwhere.tzwhere().tzNameAt(observer.lat*180/np.pi, wrap_pm180(observer.lon*180/np.pi))
@@ -4377,7 +4403,7 @@ def plot_visibility_tracks(target_list,observer,obsstart,obsend, weights=None, m
     fig1=plt.figure(1,figsize=figsize)
     ax1=fig1.add_subplot(111)#,adjustable='box-forced',aspect=5e-3)
     plot_visibility_tracks_toaxis(target_list,observer,obsstart,obsend, ax1, weights=weights, mode=mode, duration_hours=duration_hours, plotmeantransit=plotmeantransit, timezone=timezone, xaxisformatter=xaxisformatter)
-    if savepath is not '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
+    if savepath != '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
     if showplot==True: plt.show()
     plt.clf(); plt.close('all')
 
@@ -4495,7 +4521,7 @@ def plot_VLBA_visibility_tracks(target, obsstart, obsend, weights=None, mode='ne
     fig1=plt.figure(1,figsize=figsize)
     ax1=fig1.add_subplot(111)#,adjustable='box-forced',aspect=5e-3)
     plot_VLBA_visibility_tracks_toaxis(target,obsstart,obsend, ax1, weights=weights, mode=mode, duration_hours=duration_hours)
-    if savepath is not '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
+    if savepath != '': plt.savefig(savepath,bbox_inches='tight',dpi=dpi)
     if showplot==True: plt.show()
     plt.clf(); plt.close('all')
 
@@ -4653,7 +4679,7 @@ def download_dss_cutouts(coords, boxwidth, savepathstem, boxwidth_units='pix', f
 
 ### GALEX ###
 
-def download_galex_cutouts(coords, boxwidth, savepathstem, boxwidth_units='pix', overwrite=False, search_name=False):
+def download_galex_cutouts(coords, boxwidth, savepathstem, boxwidth_units='pix', frame='icrs', overwrite=False, search_name=False):
     """
     Convenience function to download cutouts of the GALEX NUV and FUV files.  \n
     Calls download_cutouts() with GALEX bands being passed to surveybands.
@@ -4890,7 +4916,7 @@ def make_finder_plot_singleband(targetname, coords, boxwidth, survey='DSS2 Red',
     cutout_dat,cutout_hdr = pyfits.getdata(fitssavestring, header=True);
     
     fig1=plt.figure(1)#,figsize=(9,3.5))
-    if surveytitle is True: fig1.suptitle(targetname+'  (%s)'%survey, fontsize=14, x=.5, y=.98) # single row
+    if surveytitle == True: fig1.suptitle(targetname+'  (%s)'%survey, fontsize=14, x=.5, y=.98) # single row
     else: fig1.suptitle(targetname, fontsize=14, x=.5, y=.98) 
     
     cutout_wcs = WCS(cutout_hdr)
@@ -5033,7 +5059,7 @@ def make_finder_plot_simpleRGB(targetname, coords, boxwidth, surveyR, surveyG, s
     plothdr=cutoutR_hdr.copy()
     
     fig1=plt.figure(1)#,figsize=(9,3.5))
-    if surveytitle is True: 
+    if surveytitle == True: 
         fig1.suptitle(targetname+'  (%s, %s, %s)'%(surveyR,surveyG,surveyB), fontsize=12, x=.5, y=.98) 
     else: fig1.suptitle(targetname, fontsize=12, x=.5, y=.98) 
     cutout_wcs = WCS(plothdr)
@@ -5238,7 +5264,7 @@ def make_finder_plot_multicolor(targetname, coords, boxwidth, surveyscolors=[['D
     surveyliststring=str([sc[0] for sc in surveyscolors])
     
     fig1=plt.figure(1)#,figsize=(9,3.5))
-    if surveytitle is True: 
+    if surveytitle == True: 
         fig1.suptitle(targetname+'  %s'%(surveyliststring), fontsize=12, x=.5, y=.98) # single row
     else: fig1.suptitle(targetname, fontsize=12, x=.5, y=.98)
     cutout_wcs = WCS(plothdr)
@@ -5592,7 +5618,7 @@ def band_from_freq(query_freq_GHz,print_table=False):
     freqrange_max=np.array([0.0842, 0.503, 2.04, 4.0, 8.0, 12.0, 18.0, 26.5, 40.0, 50.0]) #in GHz
     wavrange_min=299792458./(freqrange_max*1e9) *1e2 #in cm
     wavrange_max=299792458./(freqrange_min*1e9) *1e2 #in cm
-    if print_table is True:
+    if print_table == True:
         print('Band Name   Frequency Range (GHz)   Wavelength Range (cm)\n%s'%('-'*60))
         for b in range(len(bands)):
             print('    %-2s         %7.3f - %-7.3f      %7.2f - %-7.2f'%(bands[b], freqrange_min[b],freqrange_max[b], wavrange_min[b],wavrange_max[b],))
@@ -5643,7 +5669,8 @@ def info_from_idifits(idifits_path,print_style='short'):
         ## Print info about each target source
         print('%sName  ID   RA_pointing          DEC_pointing'%(' '*11))
         try:
-            for i in range(srchdr['NAXIS']):
+            #for i in range(srchdr['NAXIS2']):
+            for i in range( len(srctable['SOURCE']) ):
                 print('%15s  %2i  %18.13f  %18.13f'%(srctable['SOURCE'][i], srctable['SOURCE_ID'][i], srctable['RAOBS'][i], srctable['DECOBS'][i],))
         except: 
             print('%15s  %2i  %18.13f  %18.13f'%(srctable['SOURCE'], srctable['SOURCE_ID'], srctable['RAOBS'], srctable['DECOBS'],))
