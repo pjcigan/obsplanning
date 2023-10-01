@@ -59,7 +59,7 @@ from astroquery.simbad import Simbad
 from astropy import coordinates
 from astropy.wcs import WCS 
 import astropy.units as u
-import multicolorfits as mcf
+#import multicolorfits as mcf
 from matplotlib import rcParams
 import matplotlib.patches as patches
 import matplotlib.patheffects as PathEffects
@@ -67,6 +67,8 @@ import matplotlib.patheffects as PathEffects
 from scipy import interpolate #--> Currently only needed for calculate_antenna_visibility_limits()
 from tqdm import tqdm
 
+try: import multicolorfits as mcf
+except: print('obsplanning: multicolorfits package required for image plotting related functions (e.g., finderplots)')
 
 ### numpy, as of vers. 19.0, raises a VisibleDeprecationWarning if a function creates an array from
 #   'ragged'/non-uniform sequences (e.g., np.array([ [1,2],[3,4,5] ]) ), and warns that you must specify
@@ -1510,11 +1512,20 @@ def ephemeris_report(target,observer,obstime):
     tmp_obs=observer.copy(); tmp_obs.date=ephem.Date(obstime)
     tmp_tar=target.copy(); tmp_tar.compute(tmp_obs)
     
+    rise_time = tmp_obs.next_rising(tmp_tar)
+    set_time = tmp_obs.next_setting(tmp_tar)
+    rise_altaz = compute_target_altaz_single(tmp_tar,tmp_obs,rise_time) #returns alt,az in degrees
+    set_altaz = compute_target_altaz_single(tmp_tar,tmp_obs,set_time)
+    transit_time = calculate_transit_time_single(tmp_tar, tmp_obs, rise_time, mode='next', return_fmt='ephem')
+    transit_altaz = compute_target_altaz_single(tmp_tar,tmp_obs,transit_time)
+    
     # rise/set time, rise/set azimuth
-    print('  Target rises at %s with azimuth %.2f deg, sets at %s with azimuth %.2f deg'%(tmp_tar.rise_time, tmp_tar.rise_az/ephem.degree, tmp_tar.set_time, tmp_tar.set_az/ephem.degree))
+    #print('  Target rises at %s with azimuth %.2f deg, sets at %s with azimuth %.2f deg'%(tmp_tar.rise_time, tmp_tar.rise_az/ephem.degree, tmp_tar.set_time, tmp_tar.set_az/ephem.degree)) #--> Deprecated usage
+    print('  Target rises at %s with azimuth %.2f deg, sets at %s with azimuth %.2f deg'%(rise_time, rise_altaz[1], set_time, set_altaz[1]))
     
     # Transit time and altitude
-    print('  Target transits at %s with altitude %.2f deg'%(tmp_tar.transit_time,tmp_tar.transit_alt/ephem.degree))
+    #print('  Target transits at %s with altitude %.2f deg'%(tmp_tar.transit_time,tmp_tar.transit_alt/ephem.degree)) #--> Deprecated usage
+    print('  Target transits at %s with altitude %.2f deg'%(transit_time,transit_altaz[0]))
     
     #Whether target NEVER comes up during the night of observations?
     print('  Target %s during this night'%['does not rise' if tmp_tar.neverup else 'rises'][0]); 
@@ -2145,11 +2156,11 @@ def is_target_never_up(target,observer,approximate_time):
     Returns
     -------
     alwaysup : bool
-        True if target is always up on that day, False if not.
+        True if target is never up on that day, False if not.
     """
     tmp_ant=observer.copy(); tmp_ant.date=ephem.Date(approximate_time)
     tmp_tar=target.copy(); tmp_tar.compute(tmp_ant)
-    return tmp_tar.circumpolar
+    return tmp_tar.neverup
 
 def calculate_antenna_visibility_limits(target,station,referenceephemtime,plusminusdays=1., elevation_limit_deg=15., interpsteps=100, alwaysup_fmt='nan', timeformat='ephem', LST_PT=False, verbose=False):
     """

@@ -45,7 +45,7 @@ Tools to plan your astronomical observations, from simple conversions of coordin
 * multicolorfits
 
 
-- Tested in python 3.7 
+- Tested in python 3.7, 3.10 
 
 
 

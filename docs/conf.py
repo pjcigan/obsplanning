@@ -24,19 +24,19 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-MOCK_MODULES = ['setuptools', 'multicolorfits', 'pyqt5', 'PyQt5','PyQt5.QtGui','PyQt5.QtWidgets', 'pyface.qt','pyface.qt.QtCore', 'traitsui', 'traits', 'setup']
+MOCK_MODULES = ['setuptools', 'multicolorfits', 'pyqt5', 'PyQt5','PyQt5.QtGui','PyQt5.QtWidgets', 'pyface.qt','pyface.qt.QtCore', 'traitsui', 'traits', 'setup', 'astroquery', 'astroquery.skyview', 'astroquery.sdss', 'astroquery.simbad', 'astropy.coordinates', 'astropy.coordinates.spectral_coordinate',]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
 
 project = 'obsplanning'
-copyright = '2021, Phil Cigan'
+copyright = '2023, Phil Cigan'
 author = 'Phil Cigan'
 
 # The short X.Y version
 version = '1.0'
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = '1.0.2'
 
 # -- General configuration ---------------------------------------------------
 
