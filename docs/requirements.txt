@@ -8,3 +8,4 @@ astropy==5.2.1
 scipy
 tqdm==4.64.1
 astroquery==0.4.6
+obsplanning
