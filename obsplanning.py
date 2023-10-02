@@ -77,7 +77,7 @@ except: print('obsplanning: multicolorfits package required for image plotting r
 # I am opting here to suppress this particular warning type, to avoid these repeated warnings that do 
 # not currently impact the functionality of obsplanning.
 # np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
-
+'''
 def set_warning_state(action, category=np.VisibleDeprecationWarning, append=True, **kwargs):
     """
     Convenience function to control warning messages from within obsplanning, simply
@@ -100,7 +100,7 @@ def set_warning_state(action, category=np.VisibleDeprecationWarning, append=True
     """
     import warnings
     warnings.filterwarnings(action=action, category=category, **kwargs)
-
+'''
 #set_warning_state('once', category=np.VisibleDeprecationWarning)
 
 

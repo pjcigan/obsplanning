@@ -1,10 +1,11 @@
-numpy==1.21.2
-matplotlib==3.4.3
+numpy==1.24.2
+matplotlib==3.7.0
 DateTime==4.3
 ephem==4.1
 pytz==2021.3
 tzwhere==3.0.3
-astropy==4.3.1
-scipy==1.7.1
-tqdm==4.62.3
-astroquery==0.4.3
+astropy==5.2.1
+scipy
+tqdm==4.64.1
+astroquery==0.4.6
+obsplanning
