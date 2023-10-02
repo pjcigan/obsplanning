@@ -501,18 +501,20 @@ def sex2dec(longin,latin,RAhours=True,order='radec'):
     if 'lat' in order[:3].lower() or 'dec' in order[:3].lower(): return [latout,longout]
     else: return [longout,latout]
 
-def angulardistance(coords1,coords2,pythag_approx=False,returncomponents=False):
+def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncomponents=False, input_precision=np.float64):
     """
     Calculate the angular distance between [RA1,DEC1] and [RA2,DEC2] given in decimal (not sexagesimal). 
     
     Parameters
     ----------
-    coords1 : float
+    coords1_deg : float
         [RA,DEC] coordinates in degrees for the first object (decimal, not sexagesimal) 
-    coords2 : float
+    coords2_deg : float
         [RA,DEC] coordinates in degrees for the second object (decimal, not sexagesimal) 
     pythag_approx : bool
-        If True, use the pythagorean approximation for the distance (warning! only approximately valid for very small distances, such as for small fits images.  Likely to be deprecated in a future release.)
+        If True, use the pythagorean approximation for the distance. (WARNING! only 
+        approximately valid for very small distances, such as for small fits images.  
+        Likely to be deprecated in a future release.)
     returncomponents : bool
         Setting to True also returns the separated RA and Dec distance components
     
@@ -532,29 +534,87 @@ def angulardistance(coords1,coords2,pythag_approx=False,returncomponents=False):
        total_sep=sqrt(delta_RA^2+delta_DEC^2) \n
     Otherwise must use the full equation for arbitrary angular separation (central angle  \n
     of great-circle distance) -- for RA mapped to [0,2pi], DEC to [-pi/2,+pi/2]): \n
-        ang.dist.=arccos( sin(DEC1)sin(DEC2)+cos(DEC1)COS(DEC2)cos(RA1-RA2) )
+        ang.dist.=arccos( sin(DEC1)sin(DEC2)+cos(DEC1)COS(DEC2)cos(RA1-RA2) )\n
+    However, this standard equation may suffer from rounding errors at small angles.
+    For the particular case of equal major & minor axes (perfect sphere), a form that is \n
+    accurate for all angles and positions, including antipodes, is      angle = 
+          ( SQRT( (cos(DEC2)sin(RA1-RA2))^2 + (cos(DEC1)sin(DEC2)-sin(DEC1)cos(DEC2)cos(RA1-RA2))^2  )  )
+    arctan( ------------------------------------------------------------------------------------------  )
+          (               sin(DEC1)sin(DEC2)+cos(DEC1)cos(DEC2)cos(RA1-RA2)                             )
     
     Examples
     --------
-    obs.angulardistance([146.4247680, -14.3262771], [150.4908485, 55.6797891])  #--> 70.08988039585651 
+    obs.angulardistance([146.4247680, -14.3262771], [150.4908485, 55.6797891])  
+    #--> 70.08988039585651 
+    obs.angulardistance([146.0, -14.0], [146.0 - 1e-12, -14.0 + 1e-11], input_precision=np.float128)
+    #--> 1.0045591516529160856e-11
+    obs.angulardistance([180., -10.], [160., 30.], returncomponents=True)  
+    #--> (44.38873913031471, -19.696155060244166, 40.0)
     """
-    if pythag_approx == True: 
-        #Reasonable approximation for separations (esp. in RA) of less than ~ 1deg.  
-        #Fine for normal small FOV fits images.
-        dRA=(coords2[0]-coords1[0])*np.cos(np.mean([coords1[1],coords2[1]])*np.pi/180)
-        dDEC=(coords2[1]-coords1[1])
-        totalseparation_deg=np.sqrt(dRA**2+dDEC**2)
+    ### Convert angles to radians
+    ### For differences ~fractions of arcsec, precision may not be enough. Try 128-bit
+    coords1_rad = np.array(coords1_deg,dtype=input_precision)*np.pi/180
+    coords2_rad = np.array(coords2_deg,dtype=input_precision)*np.pi/180
+    ### Separate longitudes and latitudes (for either single coordinate pairs or vectors)
+    #   to make the equations below easier to follow
+    if len(coords1_rad.shape)==1:
+        lon1=coords1_rad[0];    lat1=coords1_rad[1]
+        lon2=coords2_rad[0];    lat2=coords2_rad[1]
+        #npaxis=0
     else: 
-        c1rad=np.array(coords1)*np.pi/180; c2rad=np.array(coords2)*np.pi/180;
-        totalseparation_deg = np.arccos( np.sin(c1rad[1])*np.sin(c2rad[1])+np.cos(c1rad[1])*np.cos(c2rad[1])*np.cos(c1rad[0]-c2rad[0]) )*180./np.pi
-        #Quick calc individual delta components from full formula after locking the 
-        #other axis to its max value.  ...not really as useful for large angles, these 
-        #individual components were really just meant for calculating pixel widths...
-        dDEC=np.arccos( np.sin(c1rad[1])*np.sin(c2rad[1])+np.cos(c1rad[1])*np.cos(c2rad[1])*1. )*180./np.pi * np.sign(coords2[1]-coords1[1]) #here, deltaRA=0
-        maxdec=np.array([c1rad[1],c2rad[1]])[np.argmax(np.abs([c1rad[1],c2rad[1]]))]
-        dRA=np.arccos( np.sin(maxdec)**2+np.cos(maxdec)**2*np.cos(c2rad[0]-c1rad[0]) )*180./np.pi *np.sign(coords2[0]-coords1[0])
-    if returncomponents==True: return totalseparation_deg,dRA,dDEC
-    else: return totalseparation_deg
+        lon1=coords1_rad[:,0];  lat1=coords1_rad[:,1]
+        lon2=coords2_rad[:,0];  lat2=coords2_rad[:,1]
+        #npaxis=0
+    
+    if pythag_approx is True: 
+        #Reasonable approximation for separations (esp. in RA) of less than ~ 1deg.  
+        #Fine for e.g. normal small FOV fits images.
+        #DEC to use for RAcosDEC should be the one closest to equator, to make the 
+        #triangle arm.  This is true whether both points are in the same hemisphere, 
+        #or if their arc crosses the equator.
+        pythag_DEC_argmins = np.nanargmin(np.abs([lat1,lat2]),axis=0) 
+        if len(coords1_rad.shape)==1:
+            pythag_DEC = [lat1,lat2][pythag_DEC_argmins]
+        else:
+            pythag_DEC_inds = tuple( np.stack([range(np.shape(pythag_DEC_argmins)[0]), 
+                                     pythag_DEC_argmins]).tolist() ) #tuple avoids a future warning...
+            pythag_DEC = np.transpose([lat1,lat2])[pythag_DEC_inds]
+        dRA_rad = (lon2-lon1)*np.cos(pythag_DEC)
+        dDEC_rad = lat2-lat1
+        totalseparation_rad = np.sqrt(dRA_rad**2+dDEC_rad**2, dtype=input_precision)
+    else: 
+        ### Full great-circle angle, from Vincenty equation.
+        # This formulation (special case of perfect sphere) is valid for all 
+        # angles and positions, doesn't suffer from rounding errors at small 
+        # angles as the usual formulation does.
+        numerator = np.sqrt( (np.cos(lat2)*np.sin(lon1-lon2))**2 + 
+            (np.cos(lat1)*np.sin(lat2)-np.sin(lat1)*np.cos(lat2)*np.cos(lon1-lon2))**2 , dtype=input_precision)
+        denominator = np.array( np.sin(lat1)*np.sin(lat2) + np.cos(lat1)*np.cos(lat2)*np.cos(lon1-lon2) )
+        #totalseparation_rad = np.arctan( numerator / denominator ) #Need to use arctan2 to account for large angles!
+        totalseparation_rad = np.arctan2( numerator, denominator ) 
+    
+    if returncomponents==True:
+        # Simple component calculation for RA/DEC geometry: 
+        #   Delta_DEC(rad) = DEC2-DEC1
+        #   Delta_RA(rad)  = (RA2-RA1)*cos(DEC of coord which is closer to equator)
+        
+        pythag_DEC_argmins = np.nanargmin(np.abs([lat1,lat2]),axis=0) 
+        if len(coords1_rad.shape)==1:
+            pythag_DEC = [lat1,lat2][pythag_DEC_argmins]
+        else:
+            pythag_DEC_inds = tuple( np.stack([range(np.shape(pythag_DEC_argmins)[0]), 
+                                     pythag_DEC_argmins]).tolist() ) #tuple avoids a future warning...
+            pythag_DEC = np.transpose([lat1,lat2])[pythag_DEC_inds]
+            #pythag_DEC_inds = np.ravel_multi_index( np.stack([range(np.shape(pythag_DEC_argmins)[0]), 
+            #                                        pythag_DEC_argmins]) , np.shape([lat1,lat2])[::-1]  )
+            #pythag_DEC = np.ravel( np.transpose([lat1,lat2]) )[pythag_DEC_inds] 
+        dDEC_rad = lat2-lat1
+        dRA_rad = (lon2-lon1)*np.cos(pythag_DEC)
+        
+        return totalseparation_rad*180/np.pi, dRA_rad*180/np.pi, dDEC_rad*180/np.pi
+    
+    else: 
+        return totalseparation_rad*180/np.pi
 
 
 
