@@ -4114,9 +4114,10 @@ def fill_twilights_split(axin,obsframe,startdate,enddate, bgcolor='k'):
         axin.text(convert_ephem_datetime(ephem.Date(sunset[1]-7./60./24)),80.5,'Sunrise %s'%(s_m[1].time().strftime('%H:%M')),color=bgcolor,fontsize=6,rotation=90,va='bottom') 
 
 
-def plot_night_observing_tracks(target_list, observer, obsstart, obsend, weights=None, mode='nearest', plotmeantransit=False, toptime='local', timezone='auto', n_steps=1000, simpletracks=False, azcmap='rainbow',light_fill=False, bgcolor='k', xaxisformatter=mdates.DateFormatter('%H:%M'), figsize=(14,8), dpi=200, savepath='',showplot=False):
+def plot_observing_tracks(target_list, observer, obsstart, obsend, weights=None, mode='nearest', plotmeantransit=False, toptime='local', timezone='auto', n_steps=1000, simpletracks=False, azcmap='rainbow',light_fill=False, bgcolor='k', xaxisformatter=mdates.DateFormatter('%H:%M'), figsize=(14,8), dpi=200, savepath='',showplot=False):
     """
-    Plot visibility tracks of an astronomical target on the sky, over the course of a night - like a classic 'staralt' plot. 
+    Plot visibility tracks of an astronomical target on the sky, over a specified
+    period - like a classic 'staralt' plot. 
     
     Parameters
     ----------
@@ -4172,13 +4173,13 @@ def plot_night_observing_tracks(target_list, observer, obsstart, obsend, weights
     mrk348=obs.create_ephem_target('Mrk348','00:48:47.14','+31:57:25.1') \n
     obsstart=obs.dtaware_to_ephem(obs.construct_datetime('2021/09/15 16:00:00','dt',timezone='US/Pacific')) \n
     obsend=obs.dtaware_to_ephem(obs.construct_datetime('2021/09/16 10:00:00','dt',timezone='US/Pacific')) \n
-    obs.plot_night_observing_tracks([ngc1052,mrk348],obs.vlbaBR,obsstart,obsend, plotmeantransit=False, simpletracks=True, toptime='local', timezone='calculate', n_steps=1000, azcmap='rainbow', light_fill=True, savepath='test.jpg', showplot=False)
+    obs.plot_observing_tracks([ngc1052,mrk348],obs.vlbaBR,obsstart,obsend, plotmeantransit=False, simpletracks=True, toptime='local', timezone='calculate', n_steps=1000, azcmap='rainbow', light_fill=True, savepath='test.jpg', showplot=False)
     """
-    if obsend<obsstart: raise Exception('plot_night_observing_tracks(): obsend is earlier than obsstart!')
     #if type(obsstart) is str: obsstart=ephem.Date(obsstart)
     #if type(obsend) is str: obsend=ephem.Date(obsend)
     obsstart=ephem.Date(obsstart)
     obsend=ephem.Date(obsend)
+    if obsend<obsstart: raise Exception('plot_observing_tracks(): obsend is earlier than obsstart!')
     #If the input target_list is just a single object, put it in a list, so it plays nice with the script.
     #   --> checking if np.ndim(target_list)==0 to check if it's array_like, as only lists etc. will have ndim>0.
     #       Per the official docs, using np.ndim(object)==0 is preferable to np.isscalar(object).
@@ -4299,6 +4300,21 @@ def plot_night_observing_tracks(target_list, observer, obsstart, obsend, weights
     if showplot==True: plt.show()
     plt.clf(); plt.close('all')
 
+def plot_night_observing_tracks(target_list, observer, obsstart, obsend, weights=None, mode='nearest', plotmeantransit=False, toptime='local', timezone='auto', n_steps=1000, simpletracks=False, azcmap='rainbow', bgcolor='k', xaxisformatter=mdates.DateFormatter('%H:%M'), figsize=(14,8), dpi=200, savepath='',showplot=False):
+    """
+    Convenience function to call obs.plot_observing_tracks(..., light_fill=False) for nighttime observations.
+    """
+    plot_observing_tracks(target_list, observer, obsstart, obsend, weights=weights, mode=mode, plotmeantransit=plotmeantransit, toptime=toptime, timezone=timezone, n_steps=n_steps, simpletracks=simpletracks, azcmap=azcmap,light_fill=False, bgcolor=bgcolor, xaxisformatter=xaxisformatter, figsize=figsize, dpi=dpi, savepath=savepath, showplot=showplot)
+## Append the general plot_observing_tracks() docstring, and add one more example
+plot_night_observing_tracks.__doc__ += plot_observing_tracks.__doc__+"obs.plot_night_observing_tracks([ngc1052,mrk348], obs.vlbaBR, obsstart, obsend, simpletracks=True, savepath='test.jpg', showplot=False)"
+
+def plot_day_observing_tracks(target_list, observer, obsstart, obsend, weights=None, mode='nearest', plotmeantransit=False, toptime='local', timezone='auto', n_steps=1000, simpletracks=False, azcmap='rainbow', bgcolor='k', xaxisformatter=mdates.DateFormatter('%H:%M'), figsize=(14,8), dpi=200, savepath='',showplot=False):
+    """
+    Convenience function to call obs.plot_observing_tracks(..., light_fill=True) for daytime observations.
+    """
+    plot_observing_tracks(target_list, observer, obsstart, obsend, weights=weights, mode=mode, plotmeantransit=plotmeantransit, toptime=toptime, timezone=timezone, n_steps=n_steps, simpletracks=simpletracks, azcmap=azcmap,light_fill=True, bgcolor=bgcolor, xaxisformatter=xaxisformatter, figsize=figsize, dpi=dpi, savepath=savepath, showplot=showplot)
+## Append the general plot_observing_tracks() docstring, and add one more example
+plot_day_observing_tracks.__doc__ += plot_observing_tracks.__doc__+"obs.plot_day_observing_tracks([ngc1052,mrk348], obs.vlbaBR, obsstart, obsend, simpletracks=True, savepath='test.jpg', showplot=False)"
 
 def plot_visibility_tracks_toaxis(target_list, observer, obsstart, obsend, axin, weights=None, mode='nearest', duration_hours=0, plotmeantransit=False, timezone='auto', xaxisformatter=mdates.DateFormatter('%H:%M')):
     """

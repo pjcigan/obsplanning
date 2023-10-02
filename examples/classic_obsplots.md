@@ -124,7 +124,7 @@ obs.plot_night_observing_tracks([crab,ngc1052], wht, ephem.Date('2025/01/03 17:0
 ![Plot of multiple visibility tracks through the night](../images/crab_visibility_tracks2.jpg "Multiple target elevation tracks over the course of the night")
 
 
-There is an option for a light-color background fill, which may be more suitable for daytime or other observations that are not dark-limited.  The daytime is now represented by color shading and the nighttime has no fill. Here is an example of observing a couple different targets from a telescope observing during the daytime.
+This function is actually just a convenience function for calling obs.plot_observing_tracks() with the default option for a dark nighttime background color (light_fill=False).  There is an option for a light-color background fill, which may be more suitable for daytime or other observations that are not dark-limited.  The daytime is now represented by color shading and the nighttime has no fill. Here is an example of observing a couple different targets from a telescope observing during the daytime.
 ```python
 ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751') 
 mrk348=obs.create_ephem_target('Mrk348','00:48:47.14','+31:57:25.1') 
@@ -133,9 +133,11 @@ mrk348=obs.create_ephem_target('Mrk348','00:48:47.14','+31:57:25.1')
 obsstart2=obs.dtaware_to_ephem(obs.construct_datetime('2021/09/15 16:00:00','dt',timezone='US/Pacific')) 
 obsend2=obs.dtaware_to_ephem(obs.construct_datetime('2021/09/16 10:00:00','dt',timezone='US/Pacific')) 
 
-obs.plot_night_observing_tracks([ngc1052,mrk348],obs.vlbaBR,obsstart2,obsend2, plotmeantransit=False, \
+obs.plot_day_observing_tracks([ngc1052,mrk348],obs.vlbaBR,obsstart2,obsend2, plotmeantransit=False, \
         simpletracks=True, toptime='local', timezone='US/Pacific', n_steps=1000, azcmap='rainbow', \
-        light_fill=True, savepath='Brewster_visibility_tracks.jpg', showplot=False)
+        savepath='Brewster_visibility_tracks.jpg', showplot=False)
+#or, equivalently, 
+# obs.plot_observing_tracks( ... , light_fill=True )
 ```
 
 ![Plot of multiple visibility tracks through the night (light)](../images/Brewster_visibility_tracks.jpg "Multiple target elevation tracks over the course of a day")
