@@ -226,6 +226,32 @@ def wrap_pm180(valin):
     valout=val_red+[360. if val_red<=-180 else 0.][0]
     return valout
 
+def wrap_pmPI(valin):
+    """
+    Wraps a value (float) to a -PI to PI radian range.  
+    
+    Parameters
+    ----------
+    valin: float
+        Input value in radians
+    
+    Returns
+    -------
+    valout : float
+    
+    Example
+    -------
+    obs.wrap_pmPI(-0.5*np.pi)  #--> -1.5707963267948966  (-pi/2)
+    obs.wrap_pmPI(1.5*np.pi)   #--> -1.5707963267948966
+    
+    Note
+    ----
+    Similar to (valin % (2*np.pi))
+    """
+    val_red=valin%(2*np.pi)-(2*np.pi)
+    valout=val_red+[(2*np.pi) if val_red<=-np.pi else 0.][0]
+    return valout
+
 def deg2hour(valin):
     """
     Converts decimal degrees to a HMS list of [ Hours (int), Minutes (int), Seconds (decimal)].
@@ -504,6 +530,8 @@ def sex2dec(longin,latin,RAhours=True,order='radec'):
 def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncomponents=False, input_precision=np.float64):
     """
     Calculate the angular distance between [RA1,DEC1] and [RA2,DEC2] given in decimal (not sexagesimal). 
+    This function uses coordinate values directly for inputs; to use ephem objects as inputs instead,
+    use obs.skysep_fixed_single(ephemsource1, ephemsource2) 
     
     Parameters
     ----------
@@ -516,7 +544,9 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
         approximately valid for very small distances, such as for small fits images.  
         Likely to be deprecated in a future release.)
     returncomponents : bool
-        Setting to True also returns the separated RA and Dec distance components
+        Setting to True also returns the separated RA and Dec distance components to
+        get from position_1 to position_2 (still as arcs on the sky, not 
+        simple pythagorean RA difference!)
     
     Returns 
     -------
@@ -550,6 +580,15 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
     #--> 1.0045591516529160856e-11
     obs.angulardistance([180., -10.], [160., 30.], returncomponents=True)  
     #--> (44.38873913031471, -19.696155060244166, 40.0)
+    ### But note carefully the effect of cos(DEC) !
+    obs.angulardistance([120., 60.], [120., 0.], returncomponents=True)
+    #--> (59.999999999999986, 0.0, -59.99999999999999)
+    obs.angulardistance([120., 60.], [100., 60.], returncomponents=True)
+    #--> (9.961850643857744, 9.961850643857813, 0.0)
+    #  DEC=60deg -> reduces 'simple' longitude diff of 20deg by ~ cos(pi/3)=0.5 
+    ### And note how a simple pythagorean approximation would give erroneous values
+    angulardistance([120., 60.], [100., 60.], returncomponents=True, pythag_approx=True)
+    #--> array([ 10., -10.,   0.])
     """
     ### Convert angles to radians
     ### For differences ~fractions of arcsec, precision may not be enough. Try 128-bit
@@ -579,9 +618,11 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
             pythag_DEC_inds = tuple( np.stack([range(np.shape(pythag_DEC_argmins)[0]), 
                                      pythag_DEC_argmins]).tolist() ) #tuple avoids a future warning...
             pythag_DEC = np.transpose([lat1,lat2])[pythag_DEC_inds]
-        dRA_rad = (lon2-lon1)*np.cos(pythag_DEC)
+        dRA_rad = wrap_pmPI(lon2-lon1)*np.cos(pythag_DEC)
         dDEC_rad = lat2-lat1
         totalseparation_rad = np.sqrt(dRA_rad**2+dDEC_rad**2, dtype=input_precision)
+        if returncomponents==True: return np.degrees([totalseparation_rad, dRA_rad, dDEC_rad])
+        else: return np.degrees(totalseparation_rad)
     else: 
         ### Full great-circle angle, from Vincenty equation.
         # This formulation (special case of perfect sphere) is valid for all 
@@ -597,7 +638,6 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
         # Simple component calculation for RA/DEC geometry: 
         #   Delta_DEC(rad) = DEC2-DEC1
         #   Delta_RA(rad)  = (RA2-RA1)*cos(DEC of coord which is closer to equator)
-        
         pythag_DEC_argmins = np.nanargmin(np.abs([lat1,lat2]),axis=0) 
         if len(coords1_rad.shape)==1:
             pythag_DEC = [lat1,lat2][pythag_DEC_argmins]
@@ -608,8 +648,11 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
             #pythag_DEC_inds = np.ravel_multi_index( np.stack([range(np.shape(pythag_DEC_argmins)[0]), 
             #                                        pythag_DEC_argmins]) , np.shape([lat1,lat2])[::-1]  )
             #pythag_DEC = np.ravel( np.transpose([lat1,lat2]) )[pythag_DEC_inds] 
-        dDEC_rad = lat2-lat1
-        dRA_rad = (lon2-lon1)*np.cos(pythag_DEC)
+        #dDEC_rad = lat2-lat1
+        #dRA_rad = wrap_pmPI(lon2-lon1)*np.cos(pythag_DEC) # --> No, results in obvious discrepancies
+        dDEC_rad = np.arccos( np.sin(lat1)*np.sin(lat2)+np.cos(lat1)*np.cos(lat2)*1. ) * np.sign(lat2-lat1) #here, deltaRA=0
+        dRA_rad = np.arccos( np.sin(pythag_DEC)**2+np.cos(pythag_DEC)**2*np.cos(lon2-lon1) ) * np.sign(lon1-lon2) 
+        #   --> sign(lon1-lon2) because longitude increases to left
         
         return totalseparation_rad*180/np.pi, dRA_rad*180/np.pi, dDEC_rad*180/np.pi
     
@@ -2801,25 +2844,46 @@ def calculate_VLBA_dynamic_starttime_range(target,approximate_time,duration_hour
     return dynamic_starttime_range
 
 
-def skysep_fixed_single(source1,source2):
+def skysep_fixed_single(source1, source2, returncomponents=False, componentframe='equatorial'):
     """
-    Calculate the angular separation on the sky (in degrees), for fixed pyephem objects source1 and source2.  To calculate the angular distance between a source and the Sun or moon, use sunsep_single() or moonsep_single() functions instead.
+    Calculate the angular separation on the sky (in degrees), for fixed pyephem 
+    objects source1 and source2.  To calculate the angular distance between a 
+    source and the Sun or moon, use sunsep_single() or moonsep_single() functions 
+    instead.
+    To input simple coordinate values instead of pyephem objects, use 
+    function angulardistance([lon1,lat1],[lon2,lat2]) instead.
     
     Parameters
     ----------
     source1 : ephem.FixedBody()
-    source2 = ephem.FixedBody() 
+    source2 : ephem.FixedBody() 
+    returncomponents : bool
+        Setting to True also returns the component separations, to go 
+        from source1 to source2. (still as arcs on the sky, not simple 
+        pythagorean differences!)
+    componentframe : str, one of ['equatorial','galactic','ecliptic']
+        If returncomponents is set to True, this determines the components to
+        return -- [RA,DEC] for 'equatorial', [longitude,latitude] otherwise
     
     Returns
     -------
     angsep : float
         The angular separation between the sources, in degrees
+    Optional, if returncomponents=True: 
+        longitude and latitude components (float), in degrees
     
     Example
     -------
-    ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751') \n
-    ngc3079=obs.create_ephem_target('NGC3079','10:01:57.80','55:40:47.24')  \n
+    ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751') 
+    ngc3079=obs.create_ephem_target('NGC3079','10:01:57.80','55:40:47.24')  
     obs.skysep_fixed_single(ngc1052,ngc3079)  #--> 108.13770035565858  [degrees]
+    ##
+    src1 = obs.create_ephem_target('src1','01:00:00.0','-30:00:00.0') #[15.0,-30.0] in decimal
+    src2 = obs.create_ephem_target('src2','23:00:00.0','-30:00:00.0') #[345.0,-30.0] in decimal
+    obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='equatorial') 
+    #--> (25.906049857216924, -25.905079284444753, 0.0)
+    obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='galactic')   
+    #--> (25.906049857216924, 39.67849268770435, 21.143725639068673)
     """
     ### Manual calculation:
     #coords1_dec=[source1.ra*180/np.pi, source1.dec*180/np.pi] #decimal coordinates [in rad, conv. to degrees]
@@ -2829,7 +2893,41 @@ def skysep_fixed_single(source1,source2):
     ### Replaced manual calculations above with ephem builtin function for simplicity...
     angsep=ephem.separation(source1,source2)*180/np.pi #Separation [in rad] converted to degrees
     
-    return angsep
+    if returncomponents==True:
+        if 'eq' in componentframe.lower(): 
+            #normally would use .a_ra and .a_dec, but forcing through
+            #ephem.Equatorial here only has .ra,.dec; but these ones
+            #already are the astrometric RA,DEC that we want, unlike 
+            #the standard .ra,.dec = .g_ra,.g_dec which are apparent 
+            #coords for the epoch
+            tmpsrc1 = ephem.Equatorial(source1); 
+            lon1=tmpsrc1.ra; lat1=tmpsrc1.dec
+            tmpsrc2 = ephem.Equatorial(source2); 
+            lon2=tmpsrc2.ra; lat2=tmpsrc2.dec
+        elif 'g' in componentframe.lower(): 
+            tmpsrc1 = ephem.Galactic(source1); 
+            lon1=tmpsrc1.lon; lat1=tmpsrc1.lat
+            tmpsrc2 = ephem.Galactic(source2); 
+            lon2=tmpsrc2.lon; lat2=tmpsrc2.lat
+        elif 'ec' in componentframe.lower(): 
+            tmpsrc1 = ephem.Ecliptic(source1); 
+            lon1=tmpsrc1.lon; lat1=tmpsrc1.lat
+            tmpsrc2 = ephem.Ecliptic(source2); 
+            lon2=tmpsrc2.lon; lat2=tmpsrc2.lat
+        else: raise Exception('skysep_fixed_single: invalid value "%s" for componentframe, choose from ["equatorial","galactic","ecliptic"])'%(componentframe) )
+        
+        # Simple component calculation for lon/lat geometry: 
+        #   Delta_lat(rad) = lat2-lat1
+        #   Delta_lon(rad)  = wrap_pmPI(lon2-lon1)*cos(lat of coord which is closer to equator)
+        pythag_lat_argmins = np.nanargmin(np.abs([lat1,lat2]),axis=0) 
+        pythag_lat = [lat1,lat2][pythag_lat_argmins]
+        dlat_rad = np.arccos( np.sin(lat1)*np.sin(lat2)+np.cos(lat1)*np.cos(lat2)*1. ) * np.sign(lat2-lat1) #here, deltalon=0
+        dlon_rad = np.arccos( np.sin(pythag_lat)**2+np.cos(pythag_lat)**2*np.cos(lon2-lon1) ) * np.sign(lon1-lon2) 
+        #   --> sign(lon1-lon2) because longitude increases to left
+        
+        return angsep,  dlon_rad*180/np.pi, dlat_rad*180/np.pi
+    else:
+        return angsep
 
 ##### Separation of target from Sun & Moon...
 
