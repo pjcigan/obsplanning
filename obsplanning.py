@@ -527,6 +527,62 @@ def sex2dec(longin,latin,RAhours=True,order='radec'):
     if 'lat' in order[:3].lower() or 'dec' in order[:3].lower(): return [latout,longout]
     else: return [longout,latout]
 
+def vincenty_sphere(lon1,lat1, lon2,lat2, units='rad', input_precision=np.float64):
+    """
+    Full great-circle angle separation between two positions, from Vincenty equation.
+    This formulation (special case of perfect sphere) is valid for all 
+    angles and positions including antipodes, and doesn't suffer from rounding 
+    errors at small angles.
+    For the particular case of equal major & minor axes (perfect sphere), a form that is
+    accurate for all angles and positions, including antipodes, is      angle = \n
+          ( SQRT( (cos(DEC2)sin(RA1-RA2))^2 + (cos(DEC1)sin(DEC2)-sin(DEC1)cos(DEC2)cos(RA1-RA2))^2  )  )
+    arctan( ------------------------------------------------------------------------------------------  )
+          (               sin(DEC1)sin(DEC2)+cos(DEC1)cos(DEC2)cos(RA1-RA2)                             )
+    
+    Parameters
+    ----------
+    lon1 : float
+        The longitude (e.g. RA, l) component of the first coordiante position
+    lat1 : float
+        The latitude (e.g. DEC, b) component of the first coordiante position
+    lon2 : float
+        The longitude (e.g. RA, l) component of the second coordiante position
+    lat2 : float
+        The latitude (e.g. DEC, b) component of the second coordiante position
+    units : str
+        'rad' if the input values are supplied as radians, 'deg' if they are in degrees
+    input_precision : numpy precision dtype
+        The precision to use for the calculation.  Lower precision will consume less
+        memory, but obviously at the expense of precision and potential for rounding 
+        errors.  For VERY small angles, if you are getting results smaller than your
+        desired precision, try increasing to np.float128.
+    
+    Returns
+    -------
+    totalseparation : float
+        Angular separation.  Output units will match input units.
+    
+    Example
+    -------
+    obs.vincenty_sphere(0.,0., np.pi,0.)  #--> 3.141592653589793
+    obs.vincenty_sphere(0.,0., 180,-45., units='deg')    # --> 135.0
+    obs.vincenty_sphere(0.,0., 1e-16,-1e-5, units='deg') # --> 1e-05
+    obs.vincenty_sphere(0.,0., 1e-16,-1e-5, units='deg', input_precision=np.float128)
+    # --> 1.0000000000000000847e-05
+    """
+    if 'deg' in units.lower():
+        lon1=np.radians(lon1); lat1=np.radians(lat1); 
+        lon2=np.radians(lon2); lat2=np.radians(lat2); 
+    numerator = np.sqrt( (np.cos(lat2)*np.sin(lon1-lon2))**2 + 
+        (np.cos(lat1)*np.sin(lat2)-np.sin(lat1)*np.cos(lat2)*np.cos(lon1-lon2))**2 , dtype=input_precision)
+    denominator = np.array( np.sin(lat1)*np.sin(lat2) + np.cos(lat1)*np.cos(lat2)*np.cos(lon1-lon2) )
+    #totalseparation_rad = np.arctan( numerator / denominator ) #Need to use arctan2 to account for large angles!
+    totalseparation_rad = np.arctan2( numerator, denominator ) 
+    if 'deg' in units.lower():
+        return np.degrees(totalseparation_rad)
+    else:
+        return totalseparation_rad
+
 def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncomponents=False, input_precision=np.float64):
     """
     Calculate the angular distance between [RA1,DEC1] and [RA2,DEC2] given in decimal (not sexagesimal). 
@@ -543,11 +599,26 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
         If True, use the pythagorean approximation for the distance. (WARNING! only 
         approximately valid for very small distances, such as for small fits images.  
         Likely to be deprecated in a future release.)
-    returncomponents : bool
-        Setting to True also returns the separated RA and Dec distance components to
-        get from position_1 to position_2 (still as arcs on the sky, not 
-        simple pythagorean RA difference!)
-    
+    returncomponents : bool or str
+        Valid options are 
+            1.)False or True (True defaults to option 2 below)
+            2.) 'cartesian' or 'RAcosDEC'
+            3.) 'spherical' or 'orthogonal'
+        When set to False, only the total separation is returned.  The other options
+        will additionally return the component angular separations specified.
+        'cartesian' or 'RAcosDEC' will return the angular separations strictly
+        following the longitude and latitude lines.  i.e., the longitude component 
+        will be along constant lat lines, but will be modified by the cosine(DEC) term. 
+        'spherical' or 'orthogonal' will return the orthogonal components in spherical 
+        coordinates (i.e. when viewed from directly above) -- angles along great circles
+        in EACH direction.  The longitude/RA component here will not follow lines of
+        constant DEC! 
+    input_precision : numpy precision dtype
+        The precision to use for the calculation.  Lower precision will consume less
+        memory, but obviously at the expense of precision and potential for rounding 
+        errors.  For VERY small angles, if you are getting results smaller than your
+        desired precision, try increasing to np.float128.
+        
     Returns 
     -------
     totalseparation_deg : float
@@ -580,14 +651,17 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
     #--> 1.0045591516529160856e-11
     obs.angulardistance([180., -10.], [160., 30.], returncomponents=True)  
     #--> (44.38873913031471, -19.696155060244166, 40.0)
-    ### But note carefully the effect of cos(DEC) !
-    obs.angulardistance([120., 60.], [120., 0.], returncomponents=True)
+    ### But note carefully the effect of cos(DEC), and !
+    obs.angulardistance([120., 60.], [120., 0.], returncomponents='cartesian')
     #--> (59.999999999999986, 0.0, -59.99999999999999)
-    obs.angulardistance([120., 60.], [100., 60.], returncomponents=True)
+    obs.angulardistance([120., 60.], [100., 60.], returncomponents='cartesian')
+    #--> (9.961850643857742, -9.99999999999999, 0.0)
+    obs.angulardistance([120., 60.], [100., 60.], returncomponents='spherical')
     #--> (9.961850643857744, 9.961850643857813, 0.0)
     #  DEC=60deg -> reduces 'simple' longitude diff of 20deg by ~ cos(pi/3)=0.5 
     ### And note how a simple pythagorean approximation would give erroneous values
-    angulardistance([120., 60.], [100., 60.], returncomponents=True, pythag_approx=True)
+    #   for the total separation.  
+    obs.angulardistance([120., 60.], [100., 60.], returncomponents=True, pythag_approx=True)
     #--> array([ 10., -10.,   0.])
     """
     ### Convert angles to radians
@@ -634,7 +708,7 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
         #totalseparation_rad = np.arctan( numerator / denominator ) #Need to use arctan2 to account for large angles!
         totalseparation_rad = np.arctan2( numerator, denominator ) 
     
-    if returncomponents==True:
+    if returncomponents != False:
         # Simple component calculation for RA/DEC geometry: 
         #   Delta_DEC(rad) = DEC2-DEC1
         #   Delta_RA(rad)  = (RA2-RA1)*cos(DEC of coord which is closer to equator)
@@ -648,12 +722,18 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
             #pythag_DEC_inds = np.ravel_multi_index( np.stack([range(np.shape(pythag_DEC_argmins)[0]), 
             #                                        pythag_DEC_argmins]) , np.shape([lat1,lat2])[::-1]  )
             #pythag_DEC = np.ravel( np.transpose([lat1,lat2]) )[pythag_DEC_inds] 
-        #dDEC_rad = lat2-lat1
-        #dRA_rad = wrap_pmPI(lon2-lon1)*np.cos(pythag_DEC) # --> No, results in obvious discrepancies
-        dDEC_rad = np.arccos( np.sin(lat1)*np.sin(lat2)+np.cos(lat1)*np.cos(lat2)*1. ) * np.sign(lat2-lat1) #here, deltaRA=0
-        dRA_rad = np.arccos( np.sin(pythag_DEC)**2+np.cos(pythag_DEC)**2*np.cos(lon2-lon1) ) * np.sign(lon1-lon2) 
-        #   --> sign(lon1-lon2) because longitude increases to left
-        
+        ##dDEC_rad = lat2-lat1
+        ##dRA_rad = wrap_pmPI(lon2-lon1)*np.cos(pythag_DEC) 
+        #dDEC_rad = np.arccos( np.sin(lat1)*np.sin(lat2)+np.cos(lat1)*np.cos(lat2)*1. ) * np.sign(lat2-lat1) #here, deltaRA=0
+        #dRA_rad = np.arccos( np.sin(pythag_DEC)**2+np.cos(pythag_DEC)**2*np.cos(lon2-lon1) ) * np.sign(lon2-lon1) 
+        dDEC_rad = lat2-lat1 #Declination diffs already follow great circle arcs
+        if type(returncomponents)==str and ('orth' in returncomponents.lower() or 'sph' in returncomponents.lower()):
+            sign_dlon = np.sign(np.mod(lon2+10,2*np.pi) - np.mod(lon1+10,2*np.pi))
+            dRA_rad = vincenty_sphere(lon1,pythag_DEC, lon2,pythag_DEC, input_precision=input_precision) * sign_dlon 
+            #dDEC_rad = vincenty_sphere(lon1,lat1, lon1,lat2, input_precision=input_precision) * np.sign(lat2-lat1)
+            #--> Declination diffs already follow great circle arcs
+        else:
+            dRA_rad = wrap_pmPI(lon2-lon1)*np.cos(pythag_DEC) 
         return totalseparation_rad*180/np.pi, dRA_rad*180/np.pi, dDEC_rad*180/np.pi
     
     else: 
@@ -2858,9 +2938,20 @@ def skysep_fixed_single(source1, source2, returncomponents=False, componentframe
     source1 : ephem.FixedBody()
     source2 : ephem.FixedBody() 
     returncomponents : bool
-        Setting to True also returns the component separations, to go 
-        from source1 to source2. (still as arcs on the sky, not simple 
-        pythagorean differences!)
+        Optinally also returns the component separations, to go 
+        from source1 to source2. Valid options are 
+            1.)False or True (True defaults to option 2 below)
+            2.) 'cartesian' or 'RAcosDEC'
+            3.) 'spherical' or 'orthogonal'
+        When set to False, only the total separation is returned.  The other options
+        will additionally return the component angular separations specified.
+        'cartesian' or 'RAcosDEC' will return the angular separations strictly
+        following the longitude and latitude lines.  i.e., the longitude component 
+        will be along constant lat lines, but will be modified by the cosine(DEC) term. 
+        'spherical' or 'orthogonal' will return the orthogonal components in spherical 
+        coordinates (i.e. when viewed from directly above) -- angles along great circles
+        in EACH direction.  The longitude/RA component here will not follow lines of
+        constant DEC! 
     componentframe : str, one of ['equatorial','galactic','ecliptic']
         If returncomponents is set to True, this determines the components to
         return -- [RA,DEC] for 'equatorial', [longitude,latitude] otherwise
@@ -2877,13 +2968,24 @@ def skysep_fixed_single(source1, source2, returncomponents=False, componentframe
     ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751') 
     ngc3079=obs.create_ephem_target('NGC3079','10:01:57.80','55:40:47.24')  
     obs.skysep_fixed_single(ngc1052,ngc3079)  #--> 108.13770035565858  [degrees]
-    ##
+    ## Some examples for sources falling along a line of constant DEC 
+    src1 = obs.create_ephem_target('src1','01:00:00.0','-60:00:00.0') #[15.0,-60.0] in decimal
+    src2 = obs.create_ephem_target('src2','23:00:00.0','-60:00:00.0') #[345.0,-60.0] in decimal
+    obs.skysep_fixed_single(src1,src2, returncomponents='RAcosDEC') #or 'cartesian' gives same 
+    #--> (14.871642464356663, -14.999999999999986, 0.0)
+    ## Now return components in Ecliptic [lon,lat] angles -- noting slight difference in
+    # returned longitude values between 'spherical' and 'cartesian'
+    obs.skysep_fixed_single(src1,src2, returncomponents='spherical', componentframe='equatorial') 
+    #--> (14.871642464356663, -14.870944452263702, 0.0)
+    obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='equatorial') 
+    #--> (14.871642464356663, -14.999999999999986, 0.0)
+    ## Now return components in Galactic [l,b] angles
     src1 = obs.create_ephem_target('src1','01:00:00.0','-30:00:00.0') #[15.0,-30.0] in decimal
     src2 = obs.create_ephem_target('src2','23:00:00.0','-30:00:00.0') #[345.0,-30.0] in decimal
-    obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='equatorial') 
-    #--> (25.906049857216924, -25.905079284444753, 0.0)
-    obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='galactic')   
-    #--> (25.906049857216924, 39.67849268770435, 21.143725639068673)
+    obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='galactic')   
+    #--> (25.90621437229111, 45.489777798143976, 21.14372563906864)
+    #   The components might 'seem' too high, but look at the Galactic coordinates of src1, src2:
+    #   [270.22743381 -86.56783073], [ 19.60461978 -65.4241051 ] 
     """
     ### Manual calculation:
     #coords1_dec=[source1.a_ra*180/np.pi, source1.a_dec*180/np.pi] #decimal coordinates [in rad, conv. to degrees]
@@ -2893,7 +2995,7 @@ def skysep_fixed_single(source1, source2, returncomponents=False, componentframe
     ### Replaced manual calculations above with ephem builtin function for simplicity...
     angsep=ephem.separation(source1,source2)*180/np.pi #Separation [in rad] converted to degrees
     
-    if returncomponents==True:
+    if returncomponents != False:
         if 'eq' in componentframe.lower(): 
             #normally would use .a_ra and .a_dec, but forcing through
             #ephem.Equatorial here only has .ra,.dec; but these ones
@@ -2921,10 +3023,16 @@ def skysep_fixed_single(source1, source2, returncomponents=False, componentframe
         #   Delta_lon(rad)  = wrap_pmPI(lon2-lon1)*cos(lat of coord which is closer to equator)
         pythag_lat_argmins = np.nanargmin(np.abs([lat1,lat2]),axis=0) 
         pythag_lat = [lat1,lat2][pythag_lat_argmins]
-        dlat_rad = np.arccos( np.sin(lat1)*np.sin(lat2)+np.cos(lat1)*np.cos(lat2)*1. ) * np.sign(lat2-lat1) #here, deltalon=0
-        dlon_rad = np.arccos( np.sin(pythag_lat)**2+np.cos(pythag_lat)**2*np.cos(lon2-lon1) ) * np.sign(lon1-lon2) 
-        #   --> sign(lon1-lon2) because longitude increases to left
-        
+        #dlat_rad = np.arccos( np.sin(lat1)*np.sin(lat2)+np.cos(lat1)*np.cos(lat2)*1. ) * np.sign(lat2-lat1) #here, deltalon=0
+        #dlon_rad = np.arccos( np.sin(pythag_lat)**2+np.cos(pythag_lat)**2*np.cos(lon2-lon1) ) * np.sign(lon2-lon1) 
+        dlat_rad = lat2-lat1 #Declination diffs already follow great circle arcs
+        if type(returncomponents)==str and ('orth' in returncomponents.lower() or 'sph' in returncomponents.lower()):
+            sign_dlon = np.sign(np.mod(lon2+10,2*np.pi) - np.mod(lon1+10,2*np.pi))
+            dlon_rad = vincenty_sphere(lon1,pythag_lat, lon2,pythag_lat) * sign_dlon
+            #dlat_rad = vincenty_sphere(lon1,lat1, lon1,lat2, input_precision=input_precision) * np.sign(lat2-lat1)
+            #--> Declination diffs already follow great circle arcs
+        else:
+            dlon_rad = wrap_pmPI(lon2-lon1)*np.cos(pythag_lat) 
         return angsep,  dlon_rad*180/np.pi, dlat_rad*180/np.pi
     else:
         return angsep

@@ -457,7 +457,8 @@ obs.skysep_fixed_single(ngc1052,ngc3079)  #--> 108.13847548432832 [degrees]
 ```
 This general sky separation function can also be used for separation from the Sun/moon, but you would first need to instantiate those objects with a specified time. The moonsep\_single and sunsep\_single functions are recommended instead, as they include this step.
 
-It's possible to return the component longitude and latitude values as well as the total separation, if those are needed.  In this case, you also need to specify the frame in which you want them calculated: default 'equatorial' (for RA,DEC), 'galactic' (for l,b), or 'ecliptic' (for lon,lat).  \[Note that the total angular separation will be the same regardless of the frame.\]
+It's possible to return the component longitude and latitude values as well as the total separation, if those are needed.  In this case, you also need to specify the frame in which you want them calculated: default 'equatorial' (for RA,DEC), 'galactic' (for l,b), or 'ecliptic' (for lon,lat).  You also need to specify whether you want the components calculated as 'cartesian' (longitude separation following lines of constant latitude) which is the default (and also what is given when returncomponents=True), or calculated as 'spherical' -- which gives the components in spherically orthogonal directions (i.e. the 'longitude' will not be along lines of constant latitude).  
+\[Note that the total angular separation will be the same regardless of the frame.\]
 ```python
 src1 = obs.create_ephem_target('src1','01:00:00.0','-30:00:00.0') #[15.0,-30.0] in decimal
 src2 = obs.create_ephem_target('src2','23:00:00.0','-30:00:00.0') #[345.0,-30.0] in decimal
@@ -465,11 +466,11 @@ src2 = obs.create_ephem_target('src2','23:00:00.0','-30:00:00.0') #[345.0,-30.0]
 obs.skysep_fixed_single(src1,src2)
 #--> 25.906047546458453     (smaller than 15+15=30, because of the cos(DEC) term)
 
-obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='equatorial')  
+obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='equatorial')  
 #--> (25.906049857216924, -25.905079284444753, 0.0)
 #    (total separation, d_RA component, d_DEC component)
 
-obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='galactic')
+obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='galactic')
 #--> (25.906049857216924, 39.67849268770435, 21.143725639068673)
 #    (total, d_l, d_b)      
 #   ==> though the individual components seem high, look at their Galactic coords:
@@ -478,7 +479,7 @@ print( np.degrees([ephem.Galactic(src2).lon,ephem.Galactic(src2).lat]) )
 #   [270.22743381 -86.56783073]
 #   [ 19.60461978 -65.4241051 ]
 
-obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='ecliptic')
+obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='ecliptic')
 #--> (25.906049857216924, -24.381436465113175, 11.53326328663634)
 #    (total, d_lon, d_lat)
 print( np.degrees([ephem.Ecliptic(src1).lon,ephem.Ecliptic(src1).lat]) )
@@ -487,6 +488,7 @@ print( np.degrees([ephem.Ecliptic(src2).lon,ephem.Ecliptic(src2).lat]) )
 #   [334.19174077 -21.68982324]
 
 ```
+There are also helper functions ```vincenty_sphere()``` and ```angulardistance()``` for computing separations with inputs given as simple floats rather than ephem objects.  See their API entries for more details.  
 
 
 
