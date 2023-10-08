@@ -3382,7 +3382,7 @@ def print_VLBA_observability_between_dates(obstarget, duration_hrs, ephemdatesta
         obstime_lst=calculate_optimal_VLBAstarttime(obstarget,obsdate_i,duration_hrs,weights=None, return_fmt=outtimefmt, LST_PT=True, mode=mode)
         print('  %s  --  %s UTC,  %s LST'%(obsdate_i.datetime().strftime('%b %d'), obstime_ut,  obstime_lst ))
         
-def query_object_coords_simbad(stringname, return_fmt='dec'):
+def query_object_coords_simbad(stringname, return_fmt='dec', **kwargs):
     """
     Query Simbad for coordinates of a named target.
     
@@ -3393,9 +3393,15 @@ def query_object_coords_simbad(stringname, return_fmt='dec'):
     Parameters
     ----------
     stringname : str
-        The common name of the desired query target. e.g., 'NGC1275'
+        The common name of the desired query target. e.g., 'NGC1275'.  
+        To query the coordinates
     return_fmt : str
         'dec','decimal','sex', or 'sexagesimal'.  The desired format of the returned coordinates.
+    kwargs : 
+        Optional keyword arguments to pass to astroquery.Simbad. Currently, the valid ones are
+         wildcard = bool, default False.  When True it means the object stringname has wildacards.
+            For example, "m [1-9]" returns M1 through M9.
+         verbose = bool, default False. True prints query results to terminal.
     
     Returns
     -------
@@ -3410,7 +3416,11 @@ def query_object_coords_simbad(stringname, return_fmt='dec'):
     # -->  ['03 19 48.1597', '+41 30 42.114']
     """
     #from astroquery.simbad import Simbad
-    querytable=Simbad.query_object(stringname)
+    querytable=Simbad.query_object(stringname, **kwargs)
+    if 'verbose' in kwargs: 
+        #tbl=Simbad.query_object(...,verbose=True) doesn't print when set as object, 
+        #so explicitly print the table to replicate the behavior
+        if kwargs['verbose']==True: print(querytable) 
     targetcoords_sex=[querytable[0]['RA'],querytable[0]['DEC']] #RA in hms, DEC in dms
     if 'dec' in return_fmt.lower(): 
         targetcoords_dec=sex2dec(*targetcoords_sex)
