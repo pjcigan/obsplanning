@@ -215,6 +215,30 @@ print( obs.calculate_VLBA_dynamic_starttime_range(ngc1052,
 # you could use weights=[1,1,1,1,1,0,0,0,0,0] to deselect the last 5.
 ```
 
+A simplified way to display a summary of the above calculations is to use ```print_VLBA_observability_summary()```.  Here is an example:
+```python
+ngc2992=obs.create_ephem_target('NGC2992','09:45:42.05','-14:19:34.98')
+
+# For 4 hour duration obs at 22GHz, print every 10 days for August 2021
+obs.print_VLBA_observability_summary(ngc2992, ephem.Date('2021/08/01 00:00:00'),
+    ephem.Date('2021/08/31 23:59:59'), 10, ephem.Date('2021/08/15 00:00:00'),
+    4.00, 22.0, weights=None)
+
+### Output:
+#Optimal VLBA observation start times between 2021 August 01 and 2021 August 31,
+#for 4.00 hr duration K-band obs. of NGC2992:
+#-----------------------------------------------------------------
+#  Aug 01  --  2021/08/01 18:04:42 UTC,  2021/08/01 07:34:28 LST
+#  Aug 11  --  2021/08/11 17:25:23 UTC,  2021/08/11 07:34:29 LST
+#  Aug 21  --  2021/08/21 16:46:04 UTC,  2021/08/21 07:34:29 LST
+#  Aug 31  --  2021/08/31 16:06:45 UTC,  2021/08/31 07:34:29 LST
+#
+#Estimated dynamical scheduling start times in PT_LST for 2021/8/15 :
+#['2021/08/15 07:34:29', '2021/08/15 07:34:29']
+```
+
+--------------------------------------------------------------------------------
+
 
 Now let's make a plot of the visibility of a target over the course of a day.  This is a way to graphically verify the times during which the target is up or down at each station.  Let's say that your observing strategy is to cycle through the three targets (Mrk348, NGC 1052, NGC 3147) to maximize uv coverage, and the total estimated project duration is 7.5 hours.  If this duration is supplied, the optimal start time will be noted on the plot with a dotted line.
 ```python

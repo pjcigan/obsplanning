@@ -3599,7 +3599,7 @@ def optimal_visibility_date(target, observer, obsyear, extra_info=True, verbose=
 
 
 
-def print_VLBA_observability_between_dates(obstarget, duration_hrs, ephemdatestart, ephemdateend, obstypestring='[]-Band', outtimefmt='%Y/%m/%d %H:%M:%S', mode='nearest'):
+def print_VLBA_observability_between_dates(obstarget, duration_hrs, ephemdatestart, ephemdateend, obstypestring='[]-Band', outtimefmt='%Y/%m/%d %H:%M:%S', mode='nearest', every_N_days=1):
     """
     Prints out optimal VLBA observing start time (in UT and PT_LST) for each day between two given dates.
     
@@ -3622,23 +3622,95 @@ def print_VLBA_observability_between_dates(obstarget, duration_hrs, ephemdatesta
         'previous'/'before' = calculate the last transit before the input time \n
         'next'/'after' = calculate the next transit after the input time \n
         'nearest' = calculate the nearest transit to the input time
+    every_N_days : int
+        Print out the observability details every N days
     
     Example
     -------
     ngc2992=obs.create_ephem_target('NGC2992','09:45:42.05','-14:19:34.98')  \n
-    obs.print_VLBA_observability_between_dates(ngc2992, 7.5, ephem.Date('2021/08/01 00:00:00'), ephem.Date('2021/08/31 23:59:59'), obstypestring='K-Band') \n
+    obs.print_VLBA_observability_between_dates(ngc2992, 7.5, 
+        ephem.Date('2021/08/01 00:00:00'), ephem.Date('2021/08/31 23:59:59'), 
+        obstypestring='K-Band', every_N_days=1) \n
     # --> \n
     # Aug 01  --  2021/08/01 16:19:42 UTC,  2021/08/01 05:49:11 LST \n
     # Aug 02  --  2021/08/02 16:15:46 UTC,  2021/08/02 05:49:11 LST \n
     # ...
     """
     print('\nOptimal VLBA observation start times between %s and %s,\nfor %.2f hr duration %s obs. of %s:\n%s'%(ephemdatestart.datetime().strftime('%Y %B %d'),ephemdateend.datetime().strftime('%Y %B %d'),duration_hrs,obstypestring,obstarget.name,'-'*65))
-    for djd in np.arange(ephemdatestart,ephemdateend):
+    for djd in np.arange(ephemdatestart,ephemdateend, every_N_days):
         obsdate_i=ephem.Date(djd)
         obstime_ut=calculate_optimal_VLBAstarttime(obstarget,obsdate_i,duration_hrs,weights=None, return_fmt=outtimefmt, LST_PT=False, mode=mode)
         obstime_lst=calculate_optimal_VLBAstarttime(obstarget,obsdate_i,duration_hrs,weights=None, return_fmt=outtimefmt, LST_PT=True, mode=mode)
         print('  %s  --  %s UTC,  %s LST'%(obsdate_i.datetime().strftime('%b %d'), obstime_ut,  obstime_lst ))
-        
+
+def print_VLBA_observability_summary(target, tstart, tend, every_N_days, t_middle, obs_dur_hrs, obs_freq_GHz, outtimefmt='%Y/%m/%d %H:%M:%S', weights=None, mode='after', elevation_limit_deg=10., LST_PT=True, plotresults=False):
+    """
+    Prints out optimal VLBA observing start times for multiple days in the specified 
+    scheduling window, displaying lines for every N days.
+    
+    Parameters
+    ----------
+    target = ephem.FixedBody()
+        The sky target of interest.  Initialize, e.g., as a create_ephem_target() object
+    tstart : ephem.Date, datetime.datetime, str formatted as 'YYYY/MM/DD HH:MM:SS.s'
+        The start date/time for determining the Sun separations
+    tend : ephem.Date, datetime.datetime, str formatted as 'YYYY/MM/DD HH:MM:SS.s'
+        The latest date/time for determining the Sun separations
+    every_N_days : int
+        The interval in days to use for determining and printing the Sun separations.
+    t_middle : 
+        The date/time somewhere in the middle of the range, to use for estimating 
+        the dynamic schedule start times (with calculate_VLBA_dynamic_starttime_range)
+    obs_dur_hrs : float
+        Duration of total observation session in hours 
+    obs_freq_GHz : float
+        The frequency of the observations, in GHz
+    outtimefmt : str
+        The dt.datetime.strftime format to use for the output times
+    weights : array-like
+        Array of the numerical weights to apply to each VLBA station
+    mode : str
+        Specifies which transit time to return. Options are \n
+        'previous'/'before' = calculate the last transit before the input time \n
+        'next'/'after' = calculate the next transit after the input time \n
+        'nearest' = calculate the nearest transit to the input time 
+    elevation_limit_deg : float [degrees]
+        The elevation limit at the observatory to use for rise/set calculations, in degrees
+    LST_PT : bool
+        True returns the time in PieTown LST (e.g., used for VLBA dynamic scheduling) 
+    plotresults : bool
+        Set to True to plot MK/SC elevations and starttimes.  [NOT YET IMPLEMENTED]
+    
+    Example
+    -------
+    ngc2992=obs.create_ephem_target('NGC2992','09:45:42.05','-14:19:34.98')  \n
+    # For 4 hour duration obs at 22GHz, print every 10 days for August 2021 
+    obs.print_VLBA_observability_summary(ngc2992, ephem.Date('2021/08/01 00:00:00'), 
+        ephem.Date('2021/08/31 23:59:59'), 10, ephem.Date('2021/08/15 00:00:00'), 
+        4.00, 22.0) \n
+    # --> \n
+    #Optimal VLBA observation start times between 2021 August 01 and 2021 August 31,
+    #for 4.00 hr duration K-band obs. of NGC2992:
+    #-----------------------------------------------------------------
+    #  Aug 01  --  2021/08/01 18:04:42 UTC,  2021/08/01 07:34:28 LST
+    #  Aug 11  --  2021/08/11 17:25:23 UTC,  2021/08/11 07:34:29 LST
+    #  Aug 21  --  2021/08/21 16:46:04 UTC,  2021/08/21 07:34:29 LST
+    #  Aug 31  --  2021/08/31 16:06:45 UTC,  2021/08/31 07:34:29 LST
+    #
+    #Estimated dynamical scheduling start times in PT_LST for 2021/8/15 :
+    #['2021/08/15 07:34:29', '2021/08/15 07:34:29']
+    """
+    simstart = ephem.Date(tstart); 
+    simend = ephem.Date(tend); 
+    sim_middle = ephem.Date(t_middle);
+    
+    print_VLBA_observability_between_dates(target,obs_dur_hrs,simstart,simend, obstypestring='%s-band'%(band_from_freq(obs_freq_GHz)), outtimefmt=outtimefmt, mode=mode, every_N_days=every_N_days)
+    print('\nEstimated dynamical scheduling start times in PT_LST for %s:'%(str(sim_middle)[:10]))
+    print(calculate_VLBA_dynamic_starttime_range(target,sim_middle,obs_dur_hrs, weights=weights, mode=mode, return_fmt=outtimefmt, elevation_limit_deg=elevation_limit_deg, LST_PT=LST_PT, plotresults=plotresults))
+    
+    print('\n')
+
+
 def query_object_coords_simbad(stringname, return_fmt='dec', **kwargs):
     """
     Query Simbad for coordinates of a named target.
