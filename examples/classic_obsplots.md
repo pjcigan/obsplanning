@@ -23,44 +23,49 @@ import obsplanning as obs
 
 
 wht = obs.create_ephem_observer('WHT', '-17 52 53.8', '28 45 37.7', 2344)
-crab = obs.create_ephem_target('Crab Nebula','05:34:31.94','22:00:52.2') 
+crab = obs.create_ephem_target('Crab Nebula','05:34:31.94','22:00:52.2')
 
 # Observation start/end times:  5 PM to 9 AM local time
-sunset, twi_civil, twi_naut, twi_astro = obs.calculate_twilight_times(wht, '2025/01/01 23:59:00')
-obsstart_local_dt = obs.dt_naive_to_dt_aware( ephem.Date('2025/10/31 17:00:00').datetime(), 'Atlantic/Canary') 
-obsend_local_dt   = obs.dt_naive_to_dt_aware( ephem.Date('2025/11/01 09:00:00').datetime(), 'Atlantic/Canary') 
+sunset, twi_civil, twi_naut, twi_astro = obs.calculate_twilight_times(wht,
+    '2025/01/01 23:59:00')
+obsstart_local_dt = obs.dt_naive_to_dt_aware(
+    ephem.Date('2025/10/31 17:00:00').datetime(), 'Atlantic/Canary' )
+obsend_local_dt   = obs.dt_naive_to_dt_aware(
+    ephem.Date('2025/11/01 09:00:00').datetime(), 'Atlantic/Canary' )
 obsstart = obs.dtaware_to_ephem(obsstart_local_dt)
 obsend   = obs.dtaware_to_ephem(obsend_local_dt)
 
 
 # A couple more example targets
-ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751') 
-ngc3147=obs.create_ephem_target('NGC3147','10:16:53.65','73:24:02.7') 
+ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751')
+ngc3147=obs.create_ephem_target('NGC3147','10:16:53.65','73:24:02.7')
 ```
 
 Note that for subsequent calculations and plots that use local time, things will run faster if you specify the Observer's timezone beforehand (when you create it).  If you don't have the timezone name string already, it can be determined automatically.
 ```python
 # If the timezone name is known already:
-wht = obs.create_ephem_observer('WHT', '-17 52 53.8', '28 45 37.7', 2344, timezone='Atlantic/Canary')
+wht = obs.create_ephem_observer('WHT', '-17 52 53.8', '28 45 37.7', 2344,
+    timezone='Atlantic/Canary')
 
-# To automatically determine the timezone: 
-wht = obs.create_ephem_observer('WHT', '-17 52 53.8', '28 45 37.7', 2344, timezone='auto')
+# To automatically determine the timezone:
+wht = obs.create_ephem_observer('WHT', '-17 52 53.8', '28 45 37.7', 2344,
+    timezone='auto')
 
 print(wht.timezone)
 # --> 'Atlantic/Canary'
 ```
 
 
-Calculate the daily transit times, rise times, set times, and peak altitudes for the specified year.  This function is one of several that can automatically determine the timezone from the observer object (using tzwhere). 
+Calculate the daily transit times, rise times, set times, and peak altitudes for the specified year.  This function is one of several that can automatically determine the timezone from the observer object (using tzwhere).
 ```python
-TRSP = obs.compute_yearly_target_data(crab, wht, '2025', timezone='auto', time_of_obs='night', \
+TRSP = obs.compute_yearly_target_data(crab, wht, '2025', timezone='auto', time_of_obs='night',
         peak_alt=True, local=True)
 # --> Four arrays: Transit,Rise,Set,PeakAltitude for each of the 365 days in the year
 ```
 
 Calculate the previous set+rise times and next set+rise times for NGC1052, as seen from the St Croix VLBA station
 ```python
-prev_setrise,next_setrise = obs.calculate_antenna_visibility_limits(ngc1052, obs.vlbaSC, 
+prev_setrise,next_setrise = obs.calculate_antenna_visibility_limits(ngc1052, obs.vlbaSC,
         ephem.Date('2025/01/01 20:36:31'), elevation_limit_deg=15.)
 ```
 
@@ -69,7 +74,7 @@ Now plot the Rise/Set/Transit times over the course of the calendar year.  This 
 ```python
 obs.plot_year_RST(crab, wht, '2025', showplot=True, savepath='./crab_2021RST.jpg')
 ```
-The 1-hour discontinuities in March and October are due to the daylight savings time switches. 
+The 1-hour discontinuities in March and October are due to the daylight savings time switches.
 
 ![RST](../images/crab_2021RST.jpg "Rise, Set, and Transit times over the course of year 2025.")
 
@@ -77,7 +82,8 @@ The 1-hour discontinuities in March and October are due to the daylight savings 
 
 Calculate the optimal day/time to observe a specified target from a specified observer site, for the given year.  This is based on the highest peak altitude.
 ```python
-obs.optimal_visibility_date(crab,wht,'2025',time_of_obs='night', verbose=True, local=True, extra_info=False)
+obs.optimal_visibility_date(crab,wht,'2025',time_of_obs='night', verbose=True, local=True,
+    extra_info=False)
 # --> '2025/01/24 22:29:36'
 
 ### With verbose=True, info also printed to screen:
@@ -91,7 +97,7 @@ This will run much faster if you supply the timezone (or it's already set for th
 
 Plot the observability of the target over the course of the year, with peak altitudes of the target and separations from the Sun & Moon denoted.   Next, plot the dark time over the course of a year, from the specified observing site, and plot the target altitude track. These plots are similar to the components of the classic 'starobs' plot.
 ```python
-obs.plot_year_observability(crab, wht, '2025', time_of_obs='22:00:00', \
+obs.plot_year_observability(crab, wht, '2025', time_of_obs='22:00:00',
     savepath='./crab_observability_2025.jpg') #Specifying calculations at 10PM
 
 obs.plot_year_darktime(crab, wht, '2025', savepath='./crab_darktime_2025.jpg')
@@ -106,11 +112,11 @@ In the darktime plot, date is on the x-axis, and the number of hours of nighttim
 
 ### Visibility tracks
 
-Now, when a particular night has been selected for observations, it's very useful to plot the target's altitude (or multiple targets' altitudes), in order to time scans as close to transit as possible.  This following function plots visibility tracks of an astronomical target on the sky, over the course of a night - like a classic 'staralt' plot. 
+Now, when a particular night has been selected for observations, it's very useful to plot the target's altitude (or multiple targets' altitudes), in order to time scans as close to transit as possible.  This following function plots visibility tracks of an astronomical target on the sky, over the course of a night - like a classic 'staralt' plot.
 ```python
-
-obs.plot_night_observing_tracks(crab,wht,obsstart,obsend, simpletracks=False, toptime='local', \
-    timezone='calculate', n_steps=1000, azcmap='rainbow', savepath='crab_visibility_tracks.jpg')
+obs.plot_night_observing_tracks(crab,wht,obsstart,obsend, simpletracks=False,
+    toptime='local', timezone='calculate', n_steps=1000, azcmap='rainbow',
+    savepath='crab_visibility_tracks.jpg')
 ```
 ![Classic plot of visibility tracks through the night](../images/crab_visibility_tracks.jpg "Crab Nebula elevation tracks over the course of the night")
 
@@ -119,46 +125,53 @@ Besides the target elevation track and the transit time, useful information such
 
 In the plot above, the target's azimuth with respect to the observatory is color coded by the cmap on the right, and this may help with considerations of things such as cable wraps.  However, it may be preferable to use the simple_tracks=True option to plot lines as simple solid colors instead of the azimuth-colormapped track line, especially if multiple target tracks are plotted.  
 ```python
-obs.plot_night_observing_tracks([crab,ngc1052], wht, ephem.Date('2025/01/03 17:00:00'), ephem.Date('2025/01/04 09:00:00'), simpletracks=True, toptime='local', timezone='calculate', n_steps=1000, savepath='crab_visibility_tracks2.jpg')
+obs.plot_night_observing_tracks([crab,ngc1052], wht, ephem.Date('2025/01/03 17:00:00'),
+    ephem.Date('2025/01/04 09:00:00'), simpletracks=True, toptime='local',
+    timezone='calculate', n_steps=1000, savepath='crab_visibility_tracks2.jpg')
 ```
 ![Plot of multiple visibility tracks through the night](../images/crab_visibility_tracks2.jpg "Multiple target elevation tracks over the course of the night")
 
 
 This function is actually just a convenience function for calling obs.plot_observing_tracks() with the default option for a dark nighttime background color (light_fill=False).  There is an option for a light-color background fill, which may be more suitable for daytime or other observations that are not dark-limited.  The daytime is now represented by color shading and the nighttime has no fill. Here is an example of observing a couple different targets from a telescope observing during the daytime.
 ```python
-ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751') 
-mrk348=obs.create_ephem_target('Mrk348','00:48:47.14','+31:57:25.1') 
+ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751')
+mrk348=obs.create_ephem_target('Mrk348','00:48:47.14','+31:57:25.1')
 
 
-obsstart2=obs.dtaware_to_ephem(obs.construct_datetime('2021/09/15 16:00:00','dt',timezone='US/Pacific')) 
-obsend2=obs.dtaware_to_ephem(obs.construct_datetime('2021/09/16 10:00:00','dt',timezone='US/Pacific')) 
+obsstart2=obs.dtaware_to_ephem( obs.construct_datetime('2021/09/15 16:00:00','dt',
+    timezone='US/Pacific') )
+obsend2=obs.dtaware_to_ephem( obs.construct_datetime('2021/09/16 10:00:00','dt',
+    timezone='US/Pacific') )
 
-obs.plot_day_observing_tracks([ngc1052,mrk348],obs.vlbaBR,obsstart2,obsend2, plotmeantransit=False, \
-        simpletracks=True, toptime='local', timezone='US/Pacific', n_steps=1000, azcmap='rainbow', \
-        savepath='Brewster_visibility_tracks.jpg', showplot=False)
-#or, equivalently, 
+obs.plot_day_observing_tracks( [ngc1052,mrk348], obs.vlbaBR, obsstart2, obsend2,
+    plotmeantransit=False, simpletracks=True, toptime='local',
+    timezone='US/Pacific', n_steps=1000, azcmap='rainbow',
+    savepath='Brewster_visibility_tracks.jpg', showplot=False )
+#or, equivalently,
 # obs.plot_observing_tracks( ... , light_fill=True )
 ```
 
 ![Plot of multiple visibility tracks through the night (light)](../images/Brewster_visibility_tracks.jpg "Multiple target elevation tracks over the course of a day")
 
-More examples of elevation track plots and calculations oriented towards VLBI can be found in later sections. 
+More examples of elevation track plots and calculations oriented towards VLBI can be found in later sections.
 
 
 To give more flexibility (for modifying the plot for your purposes, annotating, etc), it's possible to plot the altitude tracks to a figure axis.  These visibility traacks could then be included in more complex plots, with user-defined axes or sublots, etc.
 ```python
-fig1=plt.figure(1,figsize=(14,8)) 
-ax1=fig1.add_subplot(111) 
-obs.plot_visibility_tracks_toaxis([ngc1052,mrk348],obs.vlbaBR, ephem.Date('2021/04/15 00:00:00'), \
-    ephem.Date('2021/04/15 23:59:59'), ax1, timezone='US/Pacific') 
+fig1=plt.figure(1,figsize=(14,8))
+ax1=fig1.add_subplot(111)
+obs.plot_visibility_tracks_toaxis( [ngc1052,mrk348], obs.vlbaBR,
+    ephem.Date('2021/04/15 00:00:00'), ephem.Date('2021/04/15 23:59:59'), ax1,
+    timezone='US/Pacific' )
 plt.savefig('ngc1052_fullVLBA_april15.jpg'); plt.clf(); plt.close('all')
 
 
 # The above plotting and saving out can also be accomplished with this convenience function:
 
-obs.plot_visibility_tracks(target_list,observer,obsstart,obsend, weights=None, duration_hours=0, \ 
-    plotmeantransit=False, timezone='calculate', xaxisformatter=mdates.DateFormatter('%H:%M'), \
-    figsize=(14,8), dpi=200, savepath='ngc1052_fullVLBA_april15.jpg',showplot=False)
+obs.plot_visibility_tracks( target_list,observer,obsstart,obsend, weights=None,
+    duration_hours=0, plotmeantransit=False, timezone='calculate',
+    xaxisformatter=mdates.DateFormatter('%H:%M'), figsize=(14,8), dpi=200,
+    savepath='ngc1052_fullVLBA_april15.jpg', showplot=False )
 ```
 ![General plotting of visibility tracks to matplotlib axes](../images/ngc1052_fullVLBA_april15.jpg "General function plotting visibility tracks to matplotlib axes")
 
@@ -171,31 +184,37 @@ To make a finder plot to help identify a starfield around a target, you will nee
 ```python
 #Download single cutout
 
-obs.download_cutout([83.63725, 22.0145], 10.,'Crab_2massJ_10arcmin.fits', survey='2MASS-J', \ 
-    boxwidth_units='arcmin') #Crab Nebula, M1 
+obs.download_cutout( [83.63725, 22.0145], 10., 'Crab_2massJ_10arcmin.fits',
+    survey='2MASS-J', boxwidth_units='arcmin' ) #Crab Nebula, M1
 
-bs.download_cutout(obs.sex2dec('05:34:32.94','22:00:52.2'), 10.,'Crab_2massJ_10arcmin.fits', \
-    survey='2MASS-J', boxwidth_units='arcmin') 
+bs.download_cutout( obs.sex2dec('05:34:32.94','22:00:52.2'), 10.,
+    'Crab_2massJ_10arcmin.fits', survey='2MASS-J', boxwidth_units='arcmin' )
 
-obs.download_cutout('NGC1275', 90., './NGC1275_SDSSr_90asec.fits', survey='SDSSr', search_name=True, \ 
-    boxwidth_units='asec')
+obs.download_cutout( 'NGC1275', 90., './NGC1275_SDSSr_90asec.fits', survey='SDSSr',
+    search_name=True, boxwidth_units='asec' )
 ```
 
 There is also a function to download cutouts from several surveys at once for a particular target:
 ```python
-obs.download_cutouts('M104',90.,'./M104_90asec', surveybands=['DSS2 Blue','DSS2 Red','DSS2 IR'], \ 
-    search_name=True, boxwidth_units='arcsec')
+obs.download_cutouts( 'M104',90.,'./M104_90asec',
+    surveybands=['DSS2 Blue','DSS2 Red','DSS2 IR'],
+    search_name=True, boxwidth_units='arcsec' )
 ```
 
 Some convenience functions for a few named surveys:
 ```python
-obs.download_sdss_cutouts('M104',90.,'./M104_90asec',search_name=True, boxwidth_units='arcsec', \ 
-    SDSSbands=['SDSSg','SDSSi','SDSSr'])
-obs.download_dss_cutouts('M104',90.,'./M104_90asec',search_name=True, boxwidth_units='arcsec')
-obs.download_galex_cutouts('M104',90.,'./M104_90asec',search_name=True, boxwidth_units='arcsec')
-obs.download_wise_cutouts('M104',90.,'./M104_90asec',search_name=True, boxwidth_units='arcsec')
-obs.download_2mass_cutouts('M104',90.,'./M104_90asec',search_name=True, boxwidth_units='arcsec')
-obs.download_ukidss_cutouts('M104',90.,'./M104_90asec',search_name=True, boxwidth_units='arcsec')
+obs.download_sdss_cutouts( 'M104', 90., './M104_90asec', search_name=True,
+    boxwidth_units='arcsec', SDSSbands=['SDSSg','SDSSi','SDSSr'] )
+obs.download_dss_cutouts( 'M104', 90., './M104_90asec', search_name=True,
+    boxwidth_units='arcsec' )
+obs.download_galex_cutouts( 'M104', 90., './M104_90asec', search_name=True,
+    boxwidth_units='arcsec' )
+obs.download_wise_cutouts( 'M104', 90., './M104_90asec', search_name=True,
+    boxwidth_units='arcsec' )
+obs.download_2mass_cutouts( 'M104', 90., './M104_90asec', search_name=True,
+    boxwidth_units='arcsec' )
+obs.download_ukidss_cutouts( 'M104', 90., './M104_90asec', search_name=True,
+    boxwidth_units='arcsec' )
 ```
 
 
@@ -207,8 +226,8 @@ First, a single band background with colormap.  Let's make a finder plot for the
 refstars=[['5:34:42.3','22:10:34.5','HD 244988'], ['5:34:36.6','21:37:19.9','HD 36707'],]
 
 # Now create the the finder plot with a single command:
-obs.make_finder_plot_singleband('Crab Nebula', 'M1', 50., boxwidth_units='arcmin', \
-    survey='DSS2 Red', search_name=True, refregs=refstars, cmap='gist_yarg', dpi=200, \
+obs.make_finder_plot_singleband('Crab Nebula', 'M1', 50., boxwidth_units='arcmin',
+    survey='DSS2 Red', search_name=True, refregs=refstars, cmap='gist_yarg', dpi=200,
     tickcolor='0.2', mfc='r', mec='w', bs_amin=10., )
 ```
 
@@ -221,9 +240,9 @@ Now use three different bands to create a simple RGB combination image as the ba
 ```python
 refstars=[['5:34:42.3','22:10:34.5','HD 244988'], ['5:34:36.6','21:37:19.9','HD 36707'],]
 
-obs.make_finder_plot_simpleRGB('M1', obs.sex2dec('05:34:31.94','22:00:52.2'), 50., \
-    'DSS2 IR','DSS2 Red','DSS2 Blue', boxwidth_units='arcmin', refregs=refstars, \
-    Rscalefunc='linear', Gscalefunc='linear', Bscalefunc='linear', dpi=200, tickcolor='0.8', \ 
+obs.make_finder_plot_simpleRGB('M1', obs.sex2dec('05:34:31.94','22:00:52.2'), 50.,
+    'DSS2 IR','DSS2 Red','DSS2 Blue', boxwidth_units='arcmin', refregs=refstars,
+    Rscalefunc='linear', Gscalefunc='linear', Bscalefunc='linear', dpi=200, tickcolor='0.8',
     mfc='#C11B17',mec='w',bs_amin=10., filetype='jpg')
 ```
 
@@ -234,15 +253,10 @@ Now finally, you can use any number of different bands, and colorize them to any
 ```python
 refstars=[['5:34:42.3','22:10:34.5','HD 244988'], ['5:34:36.6','21:37:19.9','HD 36707'],]
 
-obs.make_finder_plot_multicolor('M1', obs.sex2dec('05:34:31.94','22:00:52.2'), 50., \
-    [['DSS2 Red','#A83C09'], ['DSS2 Blue','#336699']], boxwidth_units='arcmin', \
-    refregs=refstars, scalefuncs=['linear','linear'], dpi=200, tickcolor='0.8', \
+obs.make_finder_plot_multicolor('M1', obs.sex2dec('05:34:31.94','22:00:52.2'), 50.,
+    [['DSS2 Red','#A83C09'], ['DSS2 Blue','#336699']], boxwidth_units='arcmin',
+    refregs=refstars, scalefuncs=['linear','linear'], dpi=200, tickcolor='0.8',
     mfc='#C11B17', mec='w',bs_amin=10., filetype='jpg')
 ```
 
 ![Very fancy](../images/M1_multicolor.jpg "Crab Nebula finder plot with two individually colorized images making a multicolor composite for the background")
-
-
-
-
-

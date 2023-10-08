@@ -1426,8 +1426,8 @@ def create_ephem_target(namestring, RA, DEC, decimal_format='deg'):
     -----
     This FixedBody object's internal values can be accessed and displayed in a number of ways. By default, calling a pyephem object property returns its numerical value, while using print() on that property returns a more common human-readable format, such as sexagesimal coordinates.\n
     \n
-    ngc1052.ra,ngc1052.dec   #-->  (0.7075167104622412, -0.142444748709817) [radians] \n
-    print(ngc1052.ra,ngc1052.dec)   #-->  2:42:09.05 -8:09:41.3 \n
+    ngc1052.a_ra,ngc1052.a_dec   #-->  (0.7075167104622412, -0.142444748709817) [radians] \n
+    print(ngc1052.a_ra,ngc1052.a_dec)   #-->  2:42:09.05 -8:09:41.3 \n
     \n
     Information depending on time, such as altitude & azimuth from an Observer, can be computed using the FixedBody.compute(Observer) method. See the pyephem documentation for more details. \n
     https://rhodesmill.org/pyephem/quick.html#bodies\n
@@ -2886,8 +2886,8 @@ def skysep_fixed_single(source1, source2, returncomponents=False, componentframe
     #--> (25.906049857216924, 39.67849268770435, 21.143725639068673)
     """
     ### Manual calculation:
-    #coords1_dec=[source1.ra*180/np.pi, source1.dec*180/np.pi] #decimal coordinates [in rad, conv. to degrees]
-    #coords2_dec=[source2.ra*180/np.pi, source2.dec*180/np.pi] #decimal coordinates [in rad, conv. to degrees]
+    #coords1_dec=[source1.a_ra*180/np.pi, source1.a_dec*180/np.pi] #decimal coordinates [in rad, conv. to degrees]
+    #coords2_dec=[source2.a_ra*180/np.pi, source2.a_dec*180/np.pi] #decimal coordinates [in rad, conv. to degrees]
     #angsep=angulardistance(coords1_dec,coords2_dec) #,pythag_approx=False,returncomponents=False)
     
     ### Replaced manual calculations above with ephem builtin function for simplicity...
@@ -2983,6 +2983,49 @@ def moonsep_timearray(target,observer,obstime_array):
         moon.compute(tmp_ant);
         moonseps[t]=ephem.separation(moon,tmp_tar)*180/np.pi #Separation [in rad] converted to degrees
     return np.array(moonseps)
+
+def daily_moonseps(target,observer,tstart,tend, every_N_days=1, verbose=True):
+    """
+    Calculate the Moon separations for a given target, ever N days for the
+    period between the specified start and end.
+    
+    Parameters
+    ----------
+    target : ephem.FixedBody() 
+        Target observation source
+    observer : ephem.Observer() 
+        Observatory/antenna location object to use for the calculations
+    tstart : ephem.Date, datetime.datetime, str formatted as 'YYYY/MM/DD HH:MM:SS.s'
+        The start date/time for determining the Sun separations
+    tend : ephem.Date, datetime.datetime, str formatted as 'YYYY/MM/DD HH:MM:SS.s'
+        The latest date/time for determining the Sun separations
+    every_N_days : int
+        The interval in days to use for determining and printing the Sun separations.
+    verbose : bool
+        Whether or not to print the Sun separations to terminal.
+    
+    Example
+    -------
+    #Print Moon separations at midnight for NGC6240 every 14 days in October 2023.
+    # Note that even though "tend" was given as 10/31, the final printed entry 
+    # is (14+14)=28 days after "tstart" on Oct.1, or 10/29.
+    ngc6240 = obs.create_ephem_target('NGC 6240','16:52:58.90','02:24:03.6')
+    obs.daily_moonseps(ngc6240, obs.vlbaBR, '2023/10/01 00:00:00', '2023/10/31 00:00:00', every_N_days=14)
+    #NGC 6240
+    #  On 2023/10/1 00:00:00, Sun separation = 132.3 deg
+    #  On 2023/10/15 00:00:00, Sun separation = 52.9 deg
+    #  On 2023/10/29 00:00:00, Sun separation = 138.5 deg
+    """
+    simstart = ephem.Date(tstart); 
+    simend = ephem.Date(tend); 
+    days_sim = np.arange(simstart, simend, every_N_days )
+    target_moonseps = obs.moonsep_timearray(target,observer,days_sim)
+    if verbose==True:
+        print(target.name)
+        for d in range(len(days_sim)):
+            print('  On %s, Moon separation = %.1f deg'%(str(ephem.Date(days_sim[d])),target_moonseps[d]))
+        print('')
+    return np.array(target_moonseps)
 
 def moonsep_arrayminmax(target,observer_list,obstime,verbose=False,return_names=False):
     """
@@ -3101,6 +3144,49 @@ def sunsep_timearray(target,observer,obstime_array):
         sun.compute(tmp_ant);
         sunseps[t]=ephem.separation(sun,tmp_tar)*180/np.pi #Separation [in rad] converted to degrees
     return np.array(sunseps)
+
+def daily_sunseps(target,observer,tstart,tend, every_N_days=1, verbose=True):
+    """
+    Calculate the Sun separations for a given target, ever N days for the
+    period between the specified start and end.
+    
+    Parameters
+    ----------
+    target : ephem.FixedBody() 
+        Target observation source
+    observer : ephem.Observer() 
+        Observatory/antenna location object to use for the calculations
+    tstart : ephem.Date, datetime.datetime, str formatted as 'YYYY/MM/DD HH:MM:SS.s'
+        The start date/time for determining the Sun separations
+    tend : ephem.Date, datetime.datetime, str formatted as 'YYYY/MM/DD HH:MM:SS.s'
+        The latest date/time for determining the Sun separations
+    every_N_days : int
+        The interval in days to use for determining and printing the Sun separations.
+    verbose : bool
+        Whether or not to print the Sun separations to terminal.
+    
+    Example
+    -------
+    #Print Sun separations at noon for NGC6240 every 14 days in October 2023.
+    # Note that even though "tend" was given as 10/31, the final printed entry 
+    # is (14+14)=28 days after "tstart" on Oct.1, or 10/29.
+    ngc6240 = obs.create_ephem_target('NGC 6240','16:52:58.90','02:24:03.6')
+    obs.daily_sunseps(ngc6240, obs.vlbaBR, '2023/10/01 12:00:00', '2023/10/31 12:00:00', every_N_days=14)
+    #NGC 6240
+    #  On 2023/10/1 12:00:00, Sun separation = 66.3 deg
+    #  On 2023/10/15 12:00:00, Sun separation = 54.3 deg
+    #  On 2023/10/29 12:00:00, Sun separation = 42.8 deg
+    """
+    simstart = ephem.Date(tstart); 
+    simend = ephem.Date(tend); 
+    days_sim = np.arange(simstart, simend, every_N_days )
+    target_sunseps = obs.sunsep_timearray(target,observer,days_sim)
+    if verbose==True:
+        print(target.name)
+        for d in range(len(days_sim)):
+            print('  On %s, Sun separation = %.1f deg'%(str(ephem.Date(days_sim[d])),target_sunseps[d]))
+        print('')
+    return np.array(target_sunseps)
 
 def sunsep_arrayminmax(target,observer_list,obstime,verbose=False,return_names=False):
     """
@@ -3226,6 +3312,69 @@ def sunsep_VLBAminmax_timearray(target,obstime_array,verbose=False,return_names=
     if return_names==True: return [minsep,maxsep],[minname,maxname],[mintime,maxtime]
     else: return [minsep,maxsep]
 
+def plot_sunseps_year(target, observer, year, min_sep_val=8.4, min_sep_type='freq', savepath='./sunsep_over_year.jpg', moon=True):
+    """
+    Make a plot of the Sun (and Moon, if specified) separations from a target over 
+    the course of a year.  Also denote the minimum separation value 
+    
+    Parameters
+    ----------
+    target : ephem.FixedBody() 
+        Target observation source
+    observer : ephem.Observer() 
+        Observatory/antenna location object to use for the calculations
+    year : int
+        The year over which to calculate the Sun separations
+    min_sep_val: float
+        The minimum desired/required separation from the Sun.  Depending on what
+        is set by min_sep_type, can either be the number of degrees, or the 
+        frequency (GHz) of the observations - in which case the minimum separation
+        in degrees will be calculated by the internal table of values for the VLBA.
+    min_sep_type : str
+        What the min_sep_val corresponds to - 'degrees' or 'frequency'
+    savepath : str (path)
+        The path, including filename and file extension, to save the plot.
+    moon : bool
+        whether or not to include Moon separations in the plot.
+    
+    Note
+    ----
+    The minor ticks on the x (time) axis are 7-day increments past the first day
+    of each month, to aid easy by-eye estimations.
+    """
+    if 'freq' in min_sep_type.lower() or 'vlba' in min_sep_type.lower():
+        min_sep_deg = obs.VLBA_freq_minimum_sun_separation(min_sep_val)
+    elif 'deg' in min_sep_type.lower():
+        min_sep_deg = float(min_sep_val)
+    else: raise Exception('plot_sunseps_year(): min_sep_type "%s" not understood.  Use "freq" or "deg"'%(min_sep_type)) 
+    
+    times_year_utc = obs.create_obstime_array(dt.datetime(int(year),1,1,0,0,0), dt.datetime(int(year),12,31,0,0,0), timezone_string='UTC', n_steps=365)
+    target_sunseps=obs.sunsep_timearray(target,observer,times_year_utc)
+    
+    ax1=plt.subplot(111)
+    ax1.plot(times_year_utc,target_sunseps, color='#9F2305', label='Sun')
+    
+    if moon==True:
+        target_moonseps=obs.moonsep_timearray(target,observer,times_year_utc)
+        plt.plot(times_year_utc,target_moonseps, color='#336699', zorder=-1, label='Moon')
+        plt.legend(loc='best')
+        
+    plt.axhline(min_sep_deg,ls=':',color='0.5',zorder=-1) #Minimum separation at X-band is ~17deg
+    plt.xlabel('Date in %i'%year); plt.ylabel('%s Separation from Sun [deg]'%(target.name))
+    ##Formata datetime ticks
+    #years = mdates.YearLocator()   # every year
+    months = mdates.MonthLocator()  # every month
+    #days = mdates.DayLocator(interval=7)  # every week
+    months_fmt = mdates.DateFormatter('%b')
+    ax1.xaxis.set_major_locator(months)
+    ax1.xaxis.set_major_formatter(months_fmt)
+    #ax1.xaxis.set_minor_locator(days)
+    #https://matplotlib.org/stable/gallery/ticks/date_formatters_locators.html
+    #https://dateutil.readthedocs.io/en/stable/rrule.html
+    ax1.xaxis.set_minor_locator( mdates.RRuleLocator( mdates.rrulewrapper(mdates.MONTHLY, bymonthday=[7,14,21,28]) ) )
+    ax1.set_xlim(np.datetime64(str(year)), np.datetime64(str(year+1)))
+    plt.savefig(savepath,bbox_inches='tight')
+    plt.clf(); plt.close('all')
 
 def optimal_visibility_date(target, observer, obsyear, extra_info=True, verbose=False, return_fmt='str', timezone='auto', time_of_obs='night', peak_alt=True, local=True):
     """

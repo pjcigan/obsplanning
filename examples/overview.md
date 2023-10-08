@@ -1,8 +1,7 @@
------------------------
 
 # Introduction to working with pyephem and obsplanning objects
 
-A brief overview of how the various observer and target objects are created and used in various computations. Most of obsplanning's inner workings rely on the pyephem package - in particular, the telescope/observatory locations, sky targets, and many of the dates & times are instantiated as ephem Observer(), FixedBody() and Date() objects. 
+A brief overview of how the various observer and target objects are created and used in various computations. Most of obsplanning's inner workings rely on the pyephem package - in particular, the telescope/observatory locations, sky targets, and many of the dates & times are instantiated as ephem Observer(), FixedBody() and Date() objects.
 
 Let's start by importing various packages used below.
 
@@ -21,7 +20,7 @@ import obsplanning as obs
 
 To start things off, here's a look at how telescope or observatory objects are created in obsplanning.  As an example, we will plan a set of observations of the Crab Nebula from the William Herschel Telescope on lovely La Palma.  The WHT is located at -17:52:53.8 East in longitude, +28:45:37.7 in latitude, and at an elevation of 2344 meters:
 ```python
-# The basic format: 
+# The basic format:
 # observer_object = obs.create_ephem_observer( Name, longitude[+E], latitude, altitude[meters] )
 
 wht = obs.create_ephem_observer('WHT', '-17 52 53.8', '28 45 37.7', 2344)
@@ -29,7 +28,7 @@ wht = obs.create_ephem_observer('WHT', '-17 52 53.8', '28 45 37.7', 2344)
 #Equivalent ways to create this object using different coordinate formats:
 wht = obs.create_ephem_observer('WHT', '-17:52:53.8', '28:45:37.7', 2344)
 wht = obs.create_ephem_observer('WHT', -17.88161, 28.760472, 2344)
-wht = obs.create_ephem_observer('WHT', -0.31209297, 0.50196493, 2344, decimal_format='rad') 
+wht = obs.create_ephem_observer('WHT', -0.31209297, 0.50196493, 2344, decimal_format='rad')
 ```
 String sexagesimal coordinates are automatically parsed by pyephem, delimited by spaces or colons. Decimal coordinates can also be used. Pyephem Observer objects internally store these coordinates in radians, but as degrees are far more commonly used for decimal representation of RA/DEC coordinates, this is the default for float input in obsplanning.  The keyword decimal\_format can be set to 'radians' for native pyephem format if desired.  
 
@@ -39,7 +38,7 @@ wht.lat,wht.lon
 #-->  (0.501964934706148, -0.3120929894500905) [in radians]
 
 print(wht.lat,wht.lon)   
-#-->  28:45:37.7 -17:52:53.8 
+#-->  28:45:37.7 -17:52:53.8
 ```
 
 
@@ -94,7 +93,7 @@ print(ephem.Sun(wht).rise_time)
 This process is handled automatically by the relevant calculation functions in obsplanning.  
 
 
-Once an Observer is defined, and a date/time is applied to it, several useful pieces of information can be computed, such as sunrise and sunset, various stages of twilight, phases of the moon, etc. 
+Once an Observer is defined, and a date/time is applied to it, several useful pieces of information can be computed, such as sunrise and sunset, various stages of twilight, phases of the moon, etc.
 ```python
 ### Some calculations for the Sun:
 
@@ -184,12 +183,12 @@ obs.dtaware_to_ephem(obsstart_local)
 You can now supply these timezone-aware datetime objects to any functions that accept datetime format, or convert the tz-aware dt to ephem.Date format as shown above, if you prefer to supply local times instead of UTC.
 
 
-#### Making Observers timezone-aware 
+#### Making Observers timezone-aware
 
 Observers created using obsplanning.create\_ephem\_observer() actually use a slightly modified ("decorated" in python parlance) version of the standard ephem.Observer, now including an additional optional attribute called timezone.  This information is used in several plotting functions for displaying local time. Timezones can be included on creation as follows:
 ```python
 # Default case, with timezone set to None.
-wht = obs.create_ephem_observer('WHT', '-17:52:53.8', '28:45:37.7', 2344, timezone=None) 
+wht = obs.create_ephem_observer('WHT', '-17:52:53.8', '28:45:37.7', 2344, timezone=None)
 
 # Manually specifying the timezone, if it is known by the user.
 # In the case of the WHT used in the above examples, the timezone is 'Atlantic/Canary'
@@ -200,7 +199,7 @@ wht = obs.create_ephem_observer('WHT', '-17:52:53.8', '28:45:37.7', 2344, timezo
 ```
 
 As seen in the last example above, the timezone can be calculated automatically from the Observer's coordinates using tzwhere.  Users can determine the timezone for an Observer that is already defined (with or without timezone already set) with, e.g.:
-```python 
+```python
 obs.autocalculate_observer_timezone(wht)
 # --> 'Atlantic/Canary'
 
@@ -213,7 +212,7 @@ The autocalculate\_observer\_timezone() function also works on standard ephem.Ob
 
 #### Extra timezone utilities:
 
-Calculate the UTC offset of a particular timezone at the current time (also accounts for daylight savings). 
+Calculate the UTC offset of a particular timezone at the current time (also accounts for daylight savings).
 ```python
 dt.datetime.utcnow()  
 #--> datetime.datetime(2021, 9, 26, 1, 32, 23, 635631)
@@ -231,10 +230,10 @@ obs.pytz_timezones_from_utc_offset(-8, common_only=True)
 ```
 
 
-Check if a datetime object is already tz-aware 
+Check if a datetime object is already tz-aware
 ```python
 dt_naive = dt.datetime.strptime('2021/10/31 23:59:59','%Y/%m/%d %H:%M:%S')
-obs.is_dt_tzaware(dt_naive) #--> False 
+obs.is_dt_tzaware(dt_naive) #--> False
 obs.is_dt_tzaware(dt_naive.replace(tzinfo=pytz.UTC)) #--> True
 ```
 
@@ -278,7 +277,7 @@ print('M1 altitude on %s is %.2f deg'%(wht.date, crab.alt*180./np.pi))
 
 ```
 
-A general report of useful ephemeris data can be printed to screen with obs.ephemeris\_report : 
+A general report of useful ephemeris data can be printed to screen with obs.ephemeris\_report :
 ```python
 obs.ephemeris_report(crab, wht, '2025/01/01 23:59:00')
 #  Target rises at 2025/1/1 17:07:01 with azimuth 64.32 deg, sets at 2025/1/1 06:57:00 with azimuth 295.68 deg
@@ -289,7 +288,7 @@ obs.ephemeris_report(crab, wht, '2025/01/01 23:59:00')
 ```
 
 
-##### Converting coordinates 
+##### Converting coordinates
 
 
 The equatorial coordinates are already accessible with target.ra and target.dec, but an ephem.Equatorial class also exists, which is useful for calculations at a specific epoch:
@@ -344,7 +343,7 @@ print(crab_coords_wrong.epoch)
 Calculate coordinates at an arbitrary date, such as epoch=2050:
 ```python
 crab_coords_2050 = ephem.Equatorial(crab, epoch='2050/01/01 12:00:00')
-print(' Coordinates at epoch=%s : RA = %s , DEC = %s'%(crab_coords_2050.epoch, \
+print(' Coordinates at epoch=%s : RA = %s , DEC = %s'%(crab_coords_2050.epoch,
         crab_coords_2050.ra, crab_coords_2050.dec))
 # Coordinates at epoch=2050/1/1 12:00:00 : RA = 5:37:32.60 , DEC = 22:02:36.8
 
@@ -361,13 +360,13 @@ Again, let's take the example of observing the Crab Nebula from the WHT.  This t
 ```python
 
 wht = obs.create_ephem_observer('WHT', '-17 52 53.8', '28 45 37.7', 2344)
-crab = obs.create_ephem_target('Crab Nebula','05:34:31.94','22:00:52.2') 
+crab = obs.create_ephem_target('Crab Nebula','05:34:31.94','22:00:52.2')
 
 sunset, twi_civil, twi_naut, twi_astro = obs.calculate_twilight_times(wht, '2025/01/01 23:59:00')
 
 #Sun up/down +/-30min
 obsstart=sunset[0]+30.*ephem.minute
-obsend=sunset[1]-30.*ephem.minute 
+obsend=sunset[1]-30.*ephem.minute
 print('Start at %s, end at %s'%(ephem.date(obsstart),ephem.date(obsend)))
 # Start at 2025/1/1 18:54:27, end at 2025/1/2 07:36:20
 ```
@@ -376,15 +375,15 @@ print('Start at %s, end at %s'%(ephem.date(obsstart),ephem.date(obsend)))
 Calculate the rise, set, and transit times of the target, from the viewpoint of the specified observatory.
 ```python
 # Transit time (when it passes through the meridian / peak altitude)
-crab_transit = obs.calculate_transit_time_single(crab, wht, '2025/01/01 23:59:59', return_fmt='str') 
+crab_transit = obs.calculate_transit_time_single(crab, wht, '2025/01/01 23:59:59', return_fmt='str')
 # --> '2025/1/2 00:00:03'  [using the default transit mode='nearest']
 
 # Rise & set times
-crab_RStimes = obs.calculate_rise_set_times_single(crab, wht, '2025/01/1 23:59:59', return_fmt='str') 
+crab_RStimes = obs.calculate_rise_set_times_single(crab, wht, '2025/01/1 23:59:59', return_fmt='str')
 #--> ['2025/1/1 17:07:01', '2025/1/2 06:53:04']
 ```
 
-Calculate values for the target's altitude and azimuth over the course of the observations, from the viewpoint of the observatory.  Here the alt/az values are calculated at 200 intervals between the start and end times. 
+Calculate values for the target's altitude and azimuth over the course of the observations, from the viewpoint of the observatory.  Here the alt/az values are calculated at 200 intervals between the start and end times.
 ```python
 m1_alts,m1_azs = obs.compute_target_altaz(crab, wht, obsstart, obsend, nsteps=200)
 
@@ -420,15 +419,44 @@ Separation from Sun is also of particular interest for daytime observations (e.g
 sunsep_start = obs.sunsep_single(crab,wht,obsstart)  #162.79 deg
 ```
 
+There are convenience functions to print daily Sun and Moon separations for your target, for
+a specific time every N days.  This can be useful to help determine optimal observing days in a month or other time period.  Here is an example of printing the separations every 7 days for the month of 2023 October.  
+```python
+# Every 7 days between 10/1 and 10/31: October 1,8,15,22,29
+# Moon separations, every 7 days at midnight:
+daily_moonseps(crab, wht, '2023/10/01 00:00:00', '2023/10/31 00:00:00', every_N_days=7)
+#Crab Nebula
+#  On 2023/10/1 00:00:00, Moon separation = 54.9 deg
+#  On 2023/10/8 00:00:00, Moon separation = 37.1 deg
+#  On 2023/10/15 00:00:00, Moon separation = 119.7 deg
+#  On 2023/10/22 00:00:00, Moon separation = 148.2 deg
+#  On 2023/10/29 00:00:00, Moon separation = 47.1 deg
+## np.array([ 54.85133653,  37.10377776, 119.71043295, 148.18651131,
+#        47.05053793])
+
+# Separations from the Sun at noon, every 14 days, observing from the MK VLBA
+# station (which is built in to obsplanning)
+daily_sunseps(crab, obs.vlbaMK, '2023/10/01 12:00:00', '2023/10/31 12:00:00', every_N_days=14)
+#Crab Nebula
+#  On 2023/10/1 12:00:00, Sun separation = 103.6 deg
+#  On 2023/10/15 12:00:00, Sun separation = 117.4 deg
+#  On 2023/10/29 12:00:00, Sun separation = 131.4 deg
+##
+# np.array([103.62409241, 117.43859323, 131.36060867])
+
+
+```
+
 
 It's also straightforward to calculate the angular separation or distance from any other fixed sky object.  Useful for finding the nearest flux calibrator, or on the next science target in a list to get a sense for slew times, etc...  In this example, the separation on the sky between galaxies NGC 1052 and NGC 3079 is calculated.
 ```python
 ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751')
-ngc3079=obs.create_ephem_target('NGC3079','10:01:57.80','55:40:47.24') 
+ngc3079=obs.create_ephem_target('NGC3079','10:01:57.80','55:40:47.24')
 
 obs.skysep_fixed_single(ngc1052,ngc3079)  #--> 108.13847548432832 [degrees]
 ```
-This general sky separation function can also be used for separation from the Sun/moon, but you would first need to instantiate those objects with a specified time. The moonsep\_single and sunsep\_single functions are recommended instead, as they include this step. 
+This general sky separation function can also be used for separation from the Sun/moon, but you would first need to instantiate those objects with a specified time. The moonsep\_single and sunsep\_single functions are recommended instead, as they include this step.
+
 It's possible to return the component longitude and latitude values as well as the total separation, if those are needed.  In this case, you also need to specify the frame in which you want them calculated: default 'equatorial' (for RA,DEC), 'galactic' (for l,b), or 'ecliptic' (for lon,lat).  \[Note that the total angular separation will be the same regardless of the frame.\]
 ```python
 src1 = obs.create_ephem_target('src1','01:00:00.0','-30:00:00.0') #[15.0,-30.0] in decimal
@@ -441,7 +469,7 @@ obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='equato
 #--> (25.906049857216924, -25.905079284444753, 0.0)
 #    (total separation, d_RA component, d_DEC component)
 
-obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='galactic') 
+obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='galactic')
 #--> (25.906049857216924, 39.67849268770435, 21.143725639068673)
 #    (total, d_l, d_b)      
 #   ==> though the individual components seem high, look at their Galactic coords:
@@ -450,7 +478,7 @@ print( np.degrees([ephem.Galactic(src2).lon,ephem.Galactic(src2).lat]) )
 #   [270.22743381 -86.56783073]
 #   [ 19.60461978 -65.4241051 ]
 
-obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='ecliptic') 
+obs.skysep_fixed_single(src1,src2, returncomponents=True, componentframe='ecliptic')
 #--> (25.906049857216924, -24.381436465113175, 11.53326328663634)
 #    (total, d_lon, d_lat)
 print( np.degrees([ephem.Ecliptic(src1).lon,ephem.Ecliptic(src1).lat]) )
@@ -459,7 +487,7 @@ print( np.degrees([ephem.Ecliptic(src2).lon,ephem.Ecliptic(src2).lat]) )
 #   [334.19174077 -21.68982324]
 
 ```
- 
+
 
 
 If you have a list of, e.g., potential calibrator targets and want to determine which of them is closest to your science target, this can be determined easily like in the following example that calculates the nearest of a set of standard calibrators to NGC 1052.  
@@ -473,13 +501,3 @@ obs.nearest_from_target_list(ngc1052, [obs.SRC_3C84,obs.SRC_3C286,obs.SRC_3C273]
 # --> '3C84'
 ```
 As seen in the example above, obsplanning has several common radio calibrator objects pre-defined.  Further discussion of radio-oriented tools in obsplanning are covered in a later tutorial.  
-
-
-
-
-
-
-
-
-
-
