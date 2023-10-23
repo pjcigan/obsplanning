@@ -288,16 +288,63 @@ obs.ephemeris_report(crab, wht, '2025/01/01 23:59:00')
 ```
 
 
-##### Converting coordinates
+#### Querying Coordinates
+
+What if you don't know your source coordinates, or you want to check against 'standard' catalog positions?  obsplanning has a convenience function ```query_object_coords_simbad()``` to quickly do just that by querying the Simbad service over the internet.  By default, the queried coordinates are returned in decimal format (for use in calculations), but you can specify to return them as their native sexagesimal strings.
+
+```python
+# Look up the Simbad coordinates for the Crab Nebula
+# -- by default the coordinates are returned in ICRS decimal format.
+
+obs.query_object_coords_simbad('M1') #, return_fmt='dec')
+# --> [83.62875, 22.014722222222222]
+
+# You can also specify to return the coordinates in string sexagesimal format,
+# which is useful for printing or comparing to tables, etc.
+
+obs.query_object_coords_simbad('M1', return_fmt='sex')
+# --> ['05 34 30.9', '+22 00 53']
+
+# Example using keyword args that get passed to Simbad.query_object :
+# query objects named m1 through m9 using wildcard, print out (verbose)
+# details to terminal, and return 3rd entry from the resulting table
+# (use_entry = 2, since python is zero-indexed)
+
+query_object_coords_simbad("m [1-9]", wildcard=True, verbose=True, use_entry=2)
+
+# MAIN_ID       RA         DEC     RA_PREC DEC_PREC ... COO_QUAL COO_WAVELENGTH     COO_BIBCODE     SCRIPT_NUMBER_ID
+#            "h:m:s"     "d:m:s"                    ...                                                             
+#--------- ----------- ----------- ------- -------- ... -------- -------------- ------------------- ----------------
+#    M   1  05 34 30.9   +22 00 53       5        5 ...        E              R 1995AuJPh..48..143S                1
+#    M   2 21 33 27.02 -00 49 23.7       6        6 ...        D              O 2010AJ....140.1830G                1
+#    M   3 13 42 11.62 +28 22 38.2       6        6 ...        D              O 2010AJ....140.1830G                1
+#    M   4 16 23 35.22 -26 31 32.7       6        6 ...        D              O 2010AJ....140.1830G                1
+#    M   5 15 18 33.22 +02 04 51.7       6        6 ...        D              O 2010AJ....140.1830G                1
+#NGC  6405  17 40 16.6   -32 14 31       5        5 ...        D              O 2021A&A...647A..19T                1
+#NGC  6475  17 53 47.3   -34 50 28       5        5 ...        D              O 2021A&A...647A..19T                1
+#    M   8    18 03 37    -24 23.2       4        4 ...        E                                                   1
+#    M   9 17 19 11.78 -18 30 58.5       6        6 ...        D                2002MNRAS.332..441F                1
+## --> Output:
+# [205.54841666666667, 28.377277777777778]
+```
+
+At the moment, only Simbad queries by target name are implemented here; in the future other query services will be added. Under the hood, this is simply calling ```astroquery.simbad.Simbad.query_object(stringname, **kwargs)```, so you can alternatively call astroquery manually with other services like NED or many others of your choice.  
 
 
-The equatorial coordinates are already accessible with target.ra and target.dec, but an ephem.Equatorial class also exists, which is useful for calculations at a specific epoch:
+
+##### Converting Coordinates
+
+
+The equatorial coordinates are already accessible with target.ra and target.dec (or target.g_ra, target.g_dec), but an ephem.Equatorial class also exists, which is useful for calculations at a specific epoch:
 ```python
 crab_coords_equatorial = ephem.Equatorial(crab, epoch=ephem.J2000)
 print(crab_coords_equatorial.ra,crab_coords_equatorial.dec)
 # 5:34:31.94 22:00:52.2
 
 ```
+
+Note that the 'astrometric' RA and DEC coordinates (not dependent on epoch) should be accessed with target.a_ra and target.a_dec, instead.  See the [pyephem documentation](https://rhodesmill.org/pyephem/radec) for more details.
+
 
 To convert a target's coordinates from Equatorial (RA/DEC) to Ecliptic (Lon/Lat) or Galactic (Lon/Lat):
 ```python
@@ -371,6 +418,7 @@ print('Start at %s, end at %s'%(ephem.date(obsstart),ephem.date(obsend)))
 # Start at 2025/1/1 18:54:27, end at 2025/1/2 07:36:20
 ```
 
+##### Source Elevation (Rise, Set, Transit times)
 
 Calculate the rise, set, and transit times of the target, from the viewpoint of the specified observatory.
 ```python
@@ -405,7 +453,7 @@ times_sidereal = obs.compute_sidereal_times(wht, obsstart, obsend, nsteps=200) #
 ```
 
 
-
+##### Separations Between Sources
 
 Calculate the angular separation or distance on the sky from a target and the Moon, for the specified time.
 ```python
@@ -492,6 +540,7 @@ There are also helper functions ```vincenty_sphere()``` and ```angulardistance()
 
 
 
+
 If you have a list of, e.g., potential calibrator targets and want to determine which of them is closest to your science target, this can be determined easily like in the following example that calculates the nearest of a set of standard calibrators to NGC 1052.  
 ```python
 obs.nearest_from_target_list(ngc1052, [obs.SRC_3C84,obs.SRC_3C286,obs.SRC_3C273], verbose=True)
@@ -503,3 +552,85 @@ obs.nearest_from_target_list(ngc1052, [obs.SRC_3C84,obs.SRC_3C286,obs.SRC_3C273]
 # --> '3C84'
 ```
 As seen in the example above, obsplanning has several common radio calibrator objects pre-defined.  Further discussion of radio-oriented tools in obsplanning are covered in a later tutorial.  
+
+
+
+##### Calculating Optimal Slew Ordering
+
+Telescopes take time to change their pointing on the sky, and for those that have slow motors, this can be a significant addition to your overhead.  If you need to observe several sources over the course of one observing session, taking care to observe them in a speedy order can save you valuable time that can be better used integrating on your science targets.  This compounds if you need to make several passes at targets in a loop. You can use obsplanning to determine the optimal order in which to observe a list of targets, to make efficient use of your telescope time.  
+
+Let's look at an example of observing a handful of Messier objects in a similar RA range.  Let's use the automatic simbad identifier query function to get the coordinates. (Though for your own observations you probably have much more precise values!)
+```python
+messier_list = ['m51', 'm101', 'm102', 'm104', 'm87', 'm82']
+messier_targets = [obs.create_ephem_target(n,*obs.query_object_coords_simbad(n))
+                 for n in messier_list]
+
+for t in messier_targets:
+  print('  %4s : [ %s, %s]'%(t.name, t.a_ra, t.a_dec) )
+#   m51 : [ 13:29:52.70, 47:11:42.9]
+#  m101 : [ 14:03:12.58, 54:20:55.5]
+#  m102 : [ 15:06:29.56, 55:45:47.9]
+#  m104 : [ 12:39:59.43, -11:37:23.0]
+#   m87 : [ 12:30:49.42, 12:23:28.0]
+#   m82 : [ 9:55:52.43, 69:40:46.9]
+
+##Using the built-in ephem target .a_ra,.a_dec printout as shown here is
+#  convenient, though manual formatting may be required to display more
+#  precision, etc.  
+```
+
+
+The function ```calc_optimal_slew_loop()``` will take a list of ephem targets, and calculate the optimal slew order, with a variety of options. Setting ```verbose=True``` will print out every (unique) permutation if you care to see that nitty gritty detail.  Setting ```sortloops=True``` will sort those printed verbose outputs by increasing cumulative slew.
+
+You can force it to start from a particular target with ```set_first=<target>```, which may be useful for bookending with calibrators, or a source that sets early.  By default it returns the list of names as strings, but you can have it return the list of cumulative slew separation angles/times or the list of ephem targets directly with the ```return_format``` keyword.  One assumption for the optimization is that targets will be observed in a repeated loop, and so the separation between the permutation's last and first entries are also considered.  To calculate just a single pass, without looping, you can set ```repeat_loop=False```.  
+
+```python
+# Optimize purely by angular separation (telescope slew motor speeds not considered)
+
+obs.calc_optimal_slew_loop(messier_targets, verbose=True, sortloops=True)
+
+#Permutations (repeating the loop)
+#  ['m51', 'm101', 'm102', 'm82', 'm87', 'm104']: cumulative distance = 199.4 deg
+#  ['m51', 'm104', 'm87', 'm82', 'm102', 'm101']: cumulative distance = 199.4 deg
+#  ['m51', 'm101', 'm102', 'm82', 'm104', 'm87']: cumulative distance = 200.4 deg
+# ...
+#  ['m51', 'm102', 'm87', 'm101', 'm104', 'm82']: cumulative distance = 304.2 deg
+
+## --> returns :
+#['m51', 'm101', 'm102', 'm82', 'm87', 'm104']
+
+
+#Best order for a single pass, without looping back around to the first source
+obs.calc_optimal_slew_loop(messier_targets, verbose=True, sortloops=True,
+    repeat_loop=False)
+
+# Permutations (single pass)
+#  ['m104', 'm87', 'm51', 'm101', 'm102', 'm82']: cumulative distance = 114.3 deg
+#  ['m82', 'm102', 'm101', 'm51', 'm87', 'm104']: cumulative distance = 114.3 deg
+#  ['m82', 'm101', 'm102', 'm51', 'm87', 'm104']: cumulative distance = 118.4 deg
+# ...
+```
+The optimal slew order from this group of sources has a cumulative value of 199.4 degrees, while the anti-optimal order takes 304.2 degrees of slewing.  This difference of ~100 degrees may not be much if you are going through them in one pass, but if you need to do multiple loops, that can add up.  And if your sources are spread farther across the sky, this can result in significant differences in time.
+
+Note that this algorithm is not optimized for large N, it can be extremely slow for large numbers of input sources!  (Since number of permutations increases rapidly with N...  Groups of 7 or fewer should be almost instantaneous, with dramatic compute requirements above that.)
+
+Wrapped versions of permutations are automatically dropped from the verbose output by default. For example, if [A,B,C] exists, then would drop [B,C,A] and [C,A,B] ( but not [A,C,B] ).  This may make it seem like all the returned permutations are starting from the same target.  But you can turn that off to see ALL the permutations, including wrapped duplicates, if ```drop_wrap_repeats=False```.  
+
+If you know the nominal telescope motor slew rate (or rates, for both Az,El axes), you can input those here to estimate the actual amount of time these loops will take.  Specify that you want to optimize by time with ```optimize_by='time'```, and set the actual slew speeds in degrees/minute with ```AZ_deg_min``` and ```EL_deg_min```.  Some telescopes may have different slew rates along the different axes, and this will affect the optimal ordering for targets.
+```python
+#Here, perform calculations for the same group of targets, but now specifying
+# slew speeds of 90 deg/min in azimuth, and 30 deg/min in elevation (the nominal
+# rates for the VLBA dishes).
+obs.calc_optimal_slew_loop(messier_targets, verbose=True, sortloops=True,
+    optimize_by='time', AZ_deg_min=90., EL_deg_min=30.)
+
+#Permutations (repeating the loop)
+#  ['m51', 'm104', 'm87', 'm102', 'm82', 'm101']: 5.42 min.  (211.8 deg)
+#  ['m51', 'm101', 'm82', 'm102', 'm87', 'm104']: 5.42 min.  (211.8 deg)
+#  ['m51', 'm87', 'm104', 'm102', 'm82', 'm101']: 5.42 min.  (210.1 deg)
+# ...
+#  ['m51', 'm82', 'm87', 'm101', 'm104', 'm102']: 8.79 min.  (301.5 deg)
+#  ['m51', 'm82', 'm87', 'm102', 'm104', 'm101']: 8.79 min.  (300.2 deg)
+
+```
+For this particular group of targets and slew rates, optimizing can gain you over 3 minutes (per loop), or 30 seconds of extra integration time on source.

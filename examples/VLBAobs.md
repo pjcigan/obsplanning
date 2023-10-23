@@ -379,3 +379,67 @@ for f in sorted(glob('/some/directory/with/idifits/')):
     obs.info_from_idifits(f,print_style='short');  
 #Note the semicolon at the end, to suppress the return output in ipython...
 ```
+
+
+-----------------------
+
+
+### Optimal order for slewing between sources
+
+Let's look at an example of observing a handful of bright galaxies at a similar RA as Andromeda.  Let's use the automatic coordinate query function for this example, and use dec2sex to explicitly to format the coordinate output.
+```python
+gal_list = ['m1', 'm31', 'm33', 'm74', 'm77', 'ngc1275']
+gal_targets = [obs.create_ephem_target(n,*obs.query_object_coords_simbad(n))
+                 for n in gal_list]
+
+for t in gal_targets:
+  print('  %4s : [ %s, %s]'%(t.name,
+     *obs.dec2sex(t.a_ra*180/np.pi, t.a_dec*180/np.pi, as_string=True,
+     decimal_places=4) ) )
+#    m1 : [ 05:34:30.9000, 22:00:53.0000]
+#   m31 : [ 00:42:44.3300, 41:16:07.5000]
+#   m33 : [ 01:33:50.8965, 30:39:36.6300]
+#   m74 : [ 01:36:41.7451, 15:47:01.1070]
+#   m77 : [ 02:42:40.7091, -00:00:47.8590]
+#  ngc1275 : [ 03:19:48.1599, 41:30:42.1080]
+
+
+##Note that we could also just use  
+#  print('  %4s : [ %s, %s]'%(t.name, t.a_ra, t.a_dec)
+#However using dec2sex to create the string representations from the stored
+# ephem coords (in radians) allows more customization.
+```
+
+Quickly calculate the min and max source separations.
+```python
+import itertools
+seps = [obs.skysep_fixed_single(*pair) for pair in
+    itertools.combinations(gal_targets, 2)]
+print('Separations:\n  min = %.1f\n  max = %.1f'%(np.min(seps), np.max(seps)) )
+#Separations:
+#  min = 14.8
+#  max = 63.1
+
+#--> The source separations range from 15 to 63 degrees on the sky.
+
+## Equivalently,
+#seps = np.array([ephem.separation(*pair) for pair in
+#    itertools.combinations(gal_targets, 2)]) * 180/np.pi
+```
+
+In this particular case, let's assume that we want to observe each target for a few scans, then slew to the next one and so on, and eventually loop back around and repeat the process again.  (Rather than doing complete integrations of an hour or more on one source before moving to the next.)  For an equivalent total integration time, this will allow us to build up better uv coverage, as the Earth rotates over the course of the observing session.  
+
+Again, note that while this function will be almost instantaneous for lists of ~7 or fewer sources, it will be extremely slow for about groups of more than about 8.  This is due to using itertools.permutations under the hood; optimization with a better algorithm for large N is a planned future update.  
+
+Using the nominal slew speeds of 90 deg/min in the AZ axis and 30 deg/min in the EL axis, calculate the optimal slew ordering:  
+```python
+obs.calc_optimal_slew_loop(gal_targets, verbose=True, sortloops=True,
+    optimize_by='time', AZ_deg_min=90., EL_deg_min=30.)
+
+#Permutations (repeating the loop)
+#  ['m1', 'm77', 'm74', 'm33', 'm31', 'ngc1275']: 3.08 min.  (163.1 deg)
+#  ['m1', 'm31', 'ngc1275', 'm33', 'm74', 'm77']: 3.08 min.  (201.1 deg)
+# ...
+#  ['m1', 'ngc1275', 'm77', 'm31', 'm74', 'm33']: 5.32 min.  (223.0 deg)
+```
+Digging into the list a bit, the loops range from a total of 163.1 to 261.4 degrees of slewing, or a difference of ~98 degrees. But due to the elevation axis having a slower slew rate, the optimal order is a bit different than if both axes moved at the same speed.  The difference between the most and least optimal orderings is 2min 15sec -- not much time.  However, if you plan to observe these sources in say five loops to build uv coverage, optimizing the slew order can save you over 11 minutes.  That could help keep your key file schedule within your awarded time if overhead is high from phase referencing, or it could be used as extra on-source integration or extra calibrator scans.

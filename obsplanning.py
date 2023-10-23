@@ -2,7 +2,7 @@
 ### v1.0
 ### written by Phil Cigan
 __author__ = "Phil Cigan"
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 
 
 """
@@ -33,6 +33,7 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 #import time
 import datetime as dt
+import itertools
 
 hourformat = mdates.DateFormatter('%H:%M')
 
@@ -529,10 +530,11 @@ def sex2dec(longin,latin,RAhours=True,order='radec'):
 
 def vincenty_sphere(lon1,lat1, lon2,lat2, units='rad', input_precision=np.float64):
     """
-    Full great-circle angle separation between two positions, from Vincenty equation.
-    This formulation (special case of perfect sphere) is valid for all 
-    angles and positions including antipodes, and doesn't suffer from rounding 
-    errors at small angles.
+    Full great-circle angle separation between two positions, from Vincenty ellipsoid equation.
+    This formulation (special case of equal major and minor axes = perfect sphere) is valid for all 
+    angles and positions including antipodes, and doesn't suffer from rounding errors at small 
+    angles and antipodes that the standard Vincenty ellipsoid and haversine formulae do.
+    See https://en.wikipedia.org/wiki/Great-circle_distance 
     For the particular case of equal major & minor axes (perfect sphere), a form that is
     accurate for all angles and positions, including antipodes, is      angle = \n
           ( SQRT( (cos(DEC2)sin(RA1-RA2))^2 + (cos(DEC1)sin(DEC2)-sin(DEC1)cos(DEC2)cos(RA1-RA2))^2  )  )
@@ -1101,27 +1103,46 @@ def dtaware_to_ephem(dt_in):
 
 def create_local_time_object(time_in, timezone, string_format='%Y/%m/%d %H:%M:%S', return_fmt='dt'):
     """
-    Take an input naive time (no timezone explicitly attached yet) in the desired local time, and use the supplied timezone to return a time object in the specified format: datatime, ephem.Date, or string representation.  First converts input time from specified input format to tz-aware dt object, then returns in the specified output format. Timezone-aware dt objects are now also accepted as input, and will be localized from their attached tzinfo to the specified timezone.
+    Take an input naive time (no timezone explicitly attached yet) in the desired 
+    local time, and use the supplied timezone to return a time object in the 
+    specified format: datatime, ephem.Date, or string representation.  First 
+    converts input time from specified input format to tz-aware dt object, then 
+    returns in the specified output format. Timezone-aware dt objects are now 
+    also accepted as input, and will be localized from their attached tzinfo to 
+    the specified timezone.
     
     Parameters
     ----------
     time_in : ephem.Date(), datetime.datetime, MJD (float), or str formatted as 'YYYY/MM/DD HH:MM:SS' 
-        The desired clock time in the local timezone. Can be input as a string formatted for ephem.Date, or as a naive datetime.datetime object (with no timezone attached yet).  If a tz-aware dt.datetime is used, it will use its attached tzinfo and the input timezone to localize.  Users may also input ephem.Date objects, that were previously created from a string corresponding to a local time (and not UTC as pyephem assumes), because this tz-unaware pyephem time will merely be converted to a naive datetime object. 
+        The desired clock time in the local timezone. Can be input as a string 
+        formatted for ephem.Date, or as a naive datetime.datetime object (with 
+        no timezone attached yet).  If a tz-aware dt.datetime is used, it will 
+        use its attached tzinfo and the input timezone to localize.  Users may 
+        also input ephem.Date objects, that were previously created from a 
+        string corresponding to a local time (and not UTC as pyephem assumes), 
+        because this tz-unaware pyephem time will merely be converted to a naive 
+        datetime object. 
     timezone : str, or pytz.timezone
-        The local timezone to use.  Olson database names or pytz timezones are accepted. 
+        The local timezone to use.  Olson database names or pytz timezones are 
+        accepted. 
     string_format : str
-        The format of time_in when it's given as a string. Passed to dt.datetime.strptime to parse the input values.  
-        Default is '%Y/%m/%d %H:%M:%S', which corresponds to input as 'YYYY/MM/DD hh:mm:ss'
+        The format of time_in when it's given as a string. Passed to 
+        dt.datetime.strptime to parse the input values.  
+        Default is '%Y/%m/%d %H:%M:%S', which corresponds to input as 
+        'YYYY/MM/DD hh:mm:ss'
     return_fmt : str ['dt', 'MJD', or 'str']
         The format in which the start time will be returned. Options are: \n
             'dt' or 'datetime' : dt.datetime \n
-            'str' : return a string of the date, using the format code specified in string_format to convert from dt.datetime using dt.datetime.strftime(). \n
+            'str' : return a string of the date, using the format code specified 
+                    in string_format to convert from dt.datetime using 
+                    dt.datetime.strftime(). \n
             'ephem' : ephem.Date format.  
     
     Returns
     -------
     local_time_formatted : datetime.datetime, ephem.Date, float, or str
-        Returns the time in format specified by return_fmt -- datetime, ephem.Date, MJD (float), or string representation
+        Returns the time in format specified by return_fmt -- datetime, 
+        ephem.Date, MJD (float), or string representation
     
     Examples
     --------
@@ -1173,7 +1194,8 @@ def JD(time_in, string_format='%Y/%m/%d %H:%M:%S'):
     time_in : datetime.datetime, ephem.Date, or string
         The input time.  If given as a string, specify the format using string_format.
     string_format : str
-        The format of time_in when it's given as a string.  Passed to dt.datetime.strptime to parse the input values.
+        The format of time_in when it's given as a string.  Passed to 
+        dt.datetime.strptime to parse the input values.
     
     Returns
     -------
@@ -1203,7 +1225,8 @@ def MJD(time_in, string_format='%Y/%m/%d %H:%M:%S'):
     time_in : datetime.datetime, ephem.Date, or string
         The input time.  If given as a string, specify the format using string_format.
     string_format : str
-        The format of time_in when it's given as a string.  Passed to dt.datetime.strptime to parse the values.
+        The format of time_in when it's given as a string.  Passed to 
+        dt.datetime.strptime to parse the values.
     
     Returns
     -------
@@ -3298,7 +3321,9 @@ def daily_sunseps(target,observer,tstart,tend, every_N_days=1, verbose=True):
 
 def sunsep_arrayminmax(target,observer_list,obstime,verbose=False,return_names=False):
     """
-    Calculate the angular separation of the Sun from the target, observed from a specified obsdate, and each supplied telescope/station to get the minimum/maximum separation 
+    Calculate the angular separation of the Sun from the target, observed from a 
+    specified obsdate, and each supplied telescope/station to get the minimum/maximum 
+    separation 
     
     Parameters
     ----------
@@ -3711,7 +3736,7 @@ def print_VLBA_observability_summary(target, tstart, tend, every_N_days, t_middl
     print('\n')
 
 
-def query_object_coords_simbad(stringname, return_fmt='dec', **kwargs):
+def query_object_coords_simbad(stringname, return_fmt='dec', results_ind=0, **kwargs):
     """
     Query Simbad for coordinates of a named target.
     
@@ -3726,6 +3751,9 @@ def query_object_coords_simbad(stringname, return_fmt='dec', **kwargs):
         To query the coordinates
     return_fmt : str
         'dec','decimal','sex', or 'sexagesimal'.  The desired format of the returned coordinates.
+    results_ind : int
+        The index of the queried results to return, when there are multiple results.  
+        Default is 0 (the first result)
     kwargs : 
         Optional keyword arguments to pass to astroquery.Simbad. Currently, the valid ones are
          wildcard = bool, default False.  When True it means the object stringname has wildacards.
@@ -3743,6 +3771,10 @@ def query_object_coords_simbad(stringname, return_fmt='dec', **kwargs):
     # --> -->  [83.63308333333333, 22.0145] \n
     obs.query_object_coords_simbad('NGC1275',return_fmt='sex') \n
     # -->  ['03 19 48.1597', '+41 30 42.114']
+    #
+    ## Example using keyword args from astroquery Simbad docs, and returning the 
+    #  resulting table entry index 2 (the third entry):
+    obs.query_object_coords_simbad("m [1-9]", wildcard=True, verbose=True, results_ind=2)
     """
     #from astroquery.simbad import Simbad
     querytable=Simbad.query_object(stringname, **kwargs)
@@ -3750,7 +3782,7 @@ def query_object_coords_simbad(stringname, return_fmt='dec', **kwargs):
         #tbl=Simbad.query_object(...,verbose=True) doesn't print when set as object, 
         #so explicitly print the table to replicate the behavior
         if kwargs['verbose']==True: print(querytable) 
-    targetcoords_sex=[querytable[0]['RA'],querytable[0]['DEC']] #RA in hms, DEC in dms
+    targetcoords_sex=[querytable[results_ind]['RA'],querytable[results_ind]['DEC']] #RA in hms, DEC in dms
     if 'dec' in return_fmt.lower(): 
         targetcoords_dec=sex2dec(*targetcoords_sex)
         return targetcoords_dec
@@ -4017,6 +4049,166 @@ def get_visible_targets_from_source_list_VLBA(time_start, time_end, source_list,
     observable_targets = get_visible_targets_from_source_list_multistation(observerlist, time_start, time_end, source_list, elevation_limit=elevation_limit, decbin_limits_deg=decbin_limits_deg,  minimum_observability_minutes=minimum_observability_minutes, minimum_mutual_vis_observers=minimum_mutual_vis_observers, coord_format=coord_format, skip_header=skip_header, delimiter=delimiter, nsteps=nsteps)
     
     return observable_targets
+
+
+
+def calc_optimal_slew_loop(targets, optimize_by='separation', verbose=False, repeat_loop=True, sortloops=False, return_format='names', AZ_deg_min=90., EL_deg_min=30., set_first=None, drop_wrap_repeats=True):
+    """
+    For an input list of input target ephem objects, generate all slew order permutations
+    and calculate the total distance slewed (cumulative separations).  Return the minimum.
+    
+    Parameters
+    ----------
+    targets : array-like
+        List or array of the ephem target sources to consider
+    optimize_by : str 
+        'separation' (shortest angular separation) or 'time' (uses specified 
+        motor slew speeds)
+    repeat_loop : bool
+        False optimize for single pass.  True optimizes for repeat loops.
+    sortloops : bool 
+        True sorts the list of permutations by cumulative separation.  Currently 
+        only applies to verbose output.
+    return_format : str
+        Valid options are
+        - 'names' for only the list of source names
+        - 'values' for the cumulative slew angles/times
+        - 'ephem' for list of ephem objects
+    AZ_deg_min : float
+        Slew speed in telescope Azimuth axis, in degrees per minute.
+        Defaults to 90 deg/min, the nominal VLBA value in AZ.
+    EL_deg_min float 
+        Slew speed in telescope Elevation axis, in degrees per minute.
+        Defaults to 30 deg/min, the nominal VLBA value in EL. 
+    set_first : None or string or ephem source.  
+        If specified (other than None), only use permutations that start from 
+        that source.
+    drop_wrap_repeats : bool
+        If True and repeat_loop=True, wrap permutations and remove those that 
+        contain duplicate orderings (and reverses).  For example, if [A,B,C] 
+        exists, then would drop [B,C,A] and [C,A,B] ( but not [A,C,B] )
+    
+    Returns
+    -------
+    optimum_slew_loop : list
+        Depending on what is specified in return_format, the list will either contain
+        ephem objects, a list of strings for the names, or floats for the slew loop
+        durations. 
+    
+    Example
+    -------
+    ngc6240 = obs.create_ephem_target('NGC 6240','16:52:58.90','02:24:03.6')  
+    J17353371p2047470 = obs.create_ephem_target('2MASX J17353371+2047470','17:35:33.76','20:47:47.0')  
+    CGCG341m006= obs.create_ephem_target('CGCG341-006','18:45:26.15','72:11:01.6')  
+    groupC = [ngc6240, J17353371p2047470, CGCG341m006, obs.SRC_3C345]
+    # Optimize purely by angular separation (not telescope slew speed)
+    calc_optimal_slew_loop(groupC, verbose=True, repeat_loop=True, sortloops=True, optimize_by='sep')
+    ## printed to screen:
+    #Permutations (repeating the loop)
+    #  ['NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006', '3C345']: cumulative distance = 146.7 deg
+    #  ['NGC 6240', '3C345', 'CGCG341-006', '2MASX J17353371+2047470']: cumulative distance = 146.7 deg
+    #  ['NGC 6240', '2MASX J17353371+2047470', '3C345', 'CGCG341-006']: cumulative distance = 150.9 deg
+    #  ['NGC 6240', 'CGCG341-006', '3C345', '2MASX J17353371+2047470']: cumulative distance = 150.9 deg
+    #  ['NGC 6240', 'CGCG341-006', '2MASX J17353371+2047470', '3C345']: cumulative distance = 183.9 deg
+    #  ['NGC 6240', '3C345', '2MASX J17353371+2047470', 'CGCG341-006']: cumulative distance = 183.9 deg
+    ##returned output:
+    #['NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006', '3C345']
+    #
+    # Now optimize by the time it takes to slew the telescope, using supplied 
+    # slew rates
+    calc_optimal_slew_loop(groupC, verbose=True, repeat_loop=True, sortloops=True, 
+        optimize_by='time', set_first=obs.SRC_3C345, AZ_deg_min=90., EL_deg_min=30.)
+    ## printed to screen:
+    #Permutations (repeating the loop)
+    #  ['3C345', 'NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006']: 4.65 min.  (146.7 deg)
+    #  ['3C345', '2MASX J17353371+2047470', 'NGC 6240', 'CGCG341-006']: 4.65 min.  (150.9 deg)
+    #  ['3C345', 'CGCG341-006', '2MASX J17353371+2047470', 'NGC 6240']: 4.65 min.  (146.7 deg)
+    #  ['3C345', 'CGCG341-006', 'NGC 6240', '2MASX J17353371+2047470']: 4.65 min.  (150.9 deg)
+    #  ['3C345', '2MASX J17353371+2047470', 'CGCG341-006', 'NGC 6240']: 5.92 min.  (183.9 deg)
+    #  ['3C345', 'NGC 6240', 'CGCG341-006', '2MASX J17353371+2047470']: 5.92 min.  (183.9 deg)
+    ##returned output:
+    #['3C345', 'NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006']
+    """
+    def unique_permutation_loops(perms, already_loop=True):
+        """
+        Takes in a list of permutations (e.g., [[A,B,C],[B,C,A],[A,C,B]] ) and drops 
+        order-preserved loop duplicates (--> entries that when wrapped, contain
+        a previously 
+        if already_loop==True, then a permutation's last element is already the 
+           same as the first, and should be dropped when wrapping.  e.g., 
+           [A,B,C,A] --> drop the last A, so that wrapped loop is [A,B,C,A,B,C]
+           and the unique ordered loops would be [ [A,B,C], [A,C,B] ]
+        """
+        #wrap the entire loop 
+        if already_loop==True: 
+            permwraps = [list(p)[:-1]+list(p)[:-1] for p in list(perms)]
+            searchlists = [list(p)[:-1] for p in list(perms)]
+        else: 
+            permwraps = [p+p for p in list(perms)]
+            searchlists = list(perms)
+        plen = len(searchlists[0])
+        
+        mask = np.zeros(len(perms)).astype(bool)
+        for i in range(len(perms)):
+            if mask[i]==True: continue
+            else: 
+                 for ii in range(i+1,len(perms)):
+                    if any(searchlists[i] == permwraps[ii][k:k+plen] for k in range( len(permwraps[ii]) - (len(searchlists[ii])-1) ) ):
+                        mask[ii] = True
+        
+        return [ l for l in np.array(perms)[~mask] ]
+    
+    permutations = list(itertools.permutations(targets))
+    if repeat_loop==True: 
+        #permutations = [ p+p for p in permutations ]
+        ##--> Only need first element to be repeated -- speed up
+        permutations = [ list(p) + [p[0],] for p in permutations ]
+    if set_first is not None:
+        #if type(set_first)==str: set_first = targets[ np.where([n.name == set_first for n in targets])[0][0] ]
+        if type(set_first)!=str: set_first = set_first.name
+        if set_first not in [n.name for n in targets]:
+            raise Exception('set_first source "%s" not found in provided list of targets:\n%s'%(set_first,[n.name for n in targets]))
+        permutations = list( np.array(permutations)[ [p[0].name==set_first for p in permutations] ] )
+    if drop_wrap_repeats==True and repeat_loop==True:
+        permutations = unique_permutation_loops(permutations, already_loop=True)
+    #print( [[n.name for n in p] for p in permutations])
+    
+    cumseps = np.zeros(len(permutations)) #cumulative angular separations
+    cumslew = np.zeros(len(permutations)) #cumulative slew times
+    for i,p in zip( range(len(permutations)), permutations):
+        cumseps[i] = np.sum( [ephem.separation(p[k],p[k+1])*180/np.pi for k in range(len(p)-1)] )
+        if optimize_by.lower()=='time': 
+            #Calculate the time to slew for each axis.  Assume slewing in both axes 
+            # simultaneously, and simply use the larger of the two
+            for k in range(len(p)-1):
+                #DEC_time_i = np.abs(p[k].a_dec-p[k+1].a_dec)*180/np.pi / EL_deg_min
+                sep_i,dRA_i,dDEC_i = obs.angulardistance( np.array([p[k]._ra,p[k]._dec])*180/np.pi, np.array([p[k+1]._ra,p[k+1]._dec])*180/np.pi, returncomponents=True)
+                RA_time_i = np.abs(dRA_i) / AZ_deg_min
+                DEC_time_i = np.abs(dDEC_i) / EL_deg_min
+                cumslew[i] += np.max([RA_time_i,DEC_time_i])
+    
+    if sortloops==True:
+        if optimize_by.lower()=='time': sort_inds = np.argsort(cumslew)
+        else: sort_inds = np.argsort(cumseps)
+    else:
+        sort_inds = range(len(cumseps)) #just in their existing order...
+    
+    if verbose==True:
+        print('\nPermutations (%s)'%(['repeating the loop' if repeat_loop==True else 'single pass'][0]))
+        for i in sort_inds:
+            if optimize_by.lower()=='time':
+                print('  %s: %.2f min.  (%.1f deg)'%([n.name for n in permutations[i]][:len(targets)], cumslew[i], cumseps[i]))
+            else:
+                print('  %s: cumulative distance = %.1f deg'%([n.name for n in permutations[i]][:len(targets)], cumseps[i]))
+    
+    minloop_i = np.argmin( [cumslew if optimize_by.lower()=='time' else cumseps][0])
+    
+    if return_format=='ephem':
+        return permutations[minloop_i][:len(targets)]
+    elif 'val' in return_format.lower():
+        return [[n.name for n in permutations[i]][:len(targets)] for i in sort_inds], [[cumslew[i] for i in sort_inds] if optimize_by=='time' else [cumseps[i] for i in sort_inds]][0]            
+    else: 
+        return [ n.name for n in permutations[minloop_i][:len(targets)] ]
 
 
 
