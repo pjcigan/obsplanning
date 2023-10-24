@@ -657,9 +657,25 @@ obs.nearest_from_target_list(ngc1052, [obs.SRC_3C84,obs.SRC_3C286,obs.SRC_3C273]
 #         3C84 = 50.55 deg
 #        3C286 = 152.38 deg
 #        3C273 = 146.57 deg
+#Nearest = 3C84
 
-# --> '3C84'
+## --> By default, returns the string name, '3C84'
+# Alternatively, can return the ephem object or separations using return_format='source'
+# or 'separations'
 ```
+If you need to determine the nearest reference source _on average_ from a group of targets (for example, the nearest calibrator in a list, from a group of science targets), you can simply supply the list of target sources instead of a single source.  There is an optional keyword ```stat``` to specify calculation with the mean or median.
+```python
+obs.nearest_from_target_list( [ngc1052, ngc3079, crab],
+    [obs.SRC_3C84,obs.SRC_3C286,obs.SRC_3C273,obs.SRC_DA193], verbose=True, stat='mean')
+#mean angular separations on sky from ['NGC1052', 'NGC3079', 'Crab Nebula'] (deg):
+#        3C84 = 48.93 deg
+#       3C286 = 99.36 deg
+#       3C273 = 103.22 deg
+#       DA193 = 42.27 deg
+#Nearest = DA193
+##--> For this set of target sources and reference sources, the nearest is DA193
+```
+
 As seen in the example above, obsplanning has several common radio calibrator objects pre-defined.  Further discussion of radio-oriented tools in obsplanning are covered in a later tutorial.  
 
 

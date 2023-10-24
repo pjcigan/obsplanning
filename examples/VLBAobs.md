@@ -278,7 +278,6 @@ obs.is_target_always_up(ngc3147,obs.vlbaBR,daystart)
 Do you need to determine a good fringe finder?  Obsplanning has a function to calculate the angular separations from a handful of the standard fringe finders and return the nearest one:
 ```python
 nearestff_ngc1052 = obs.nearest_standard_fringefinder(ngc1052, verbose=True)
-print('Nearest = %s'%(nearestff_ngc1052))
 
 # Angular separations on sky from NGC1052:
 #         3C84 = 50.55 deg
@@ -296,12 +295,48 @@ print('Nearest = %s'%(nearestff_ngc1052))
 
 
 ### You can always calculate the angular separation between any sky targets you want like so:
-SRC_3C84=obs.create_ephem_target('3C84','03:19:48.1600956','41:30:42.104043')
+SRC_3C84 = obs.create_ephem_target('3C84','03:19:48.1600956','41:30:42.104043')
 print( obs.skysep_fixed_single(ngc1052,SRC_3C84) )
 #--> 50.551056031843494  [degrees]
 
+### And you can specify the ephem object itself or the separations list with the keyword
+#   return_format='source' or return_format='separations', like so:
+nearestff_ngc1052 = obs.nearest_standard_fringefinder(ngc1052, return_format='source')
+ff_seps_ngc1052 = obs.nearest_standard_fringefinder(ngc1052, return_format='separations')
 ```
 
+If you want to determine the nearest fringe finder to a _group_ of science targets, simply input the group as a list:
+```python
+obs.nearest_standard_fringefinder([Mrk348,ngc1052,ngc3147,ngc2992], verbose=True, stat='median')
+median angular separations on sky from ['Mrk348', 'NGC1052', 'NGC3147', 'NGC2992'] (deg):
+#        3C84 = 52.47 deg
+#       DA193 = 63.24 deg
+#     4C39.25 = 74.24 deg
+#       3C273 = 109.89 deg
+#       3C345 = 100.05 deg
+#    1921-293 = 113.49 deg
+#     3C454.3 = 75.75 deg
+#    0234+285 = 53.08 deg
+#    0528+134 = 67.71 deg
+#  J1800+3848 = 101.94 deg
+#    2007+777 = 77.38 deg
+#Nearest = 3C84
+
+##--> 0234+285 is still a good option, but 3C84 is the nearest to the members of
+# this group on average (the median separation from the group is lowest for 3C84)
+```
+
+
+Under the hood, ```nearest_standard_fringefinder``` is just a convenience function to call ```nearest_from_target_list``` on the standard fringefinder list.  You could instead call this function to choose the nearest from among a custom list, such as this pared down selection of the built-in fringe finders (or other ephem objects):
+```python
+obs.nearest_from_target_list( ngc1052, [obs.SRC_DA193,obs.SRC_3C286,obs.SRC_3C273,],
+    verbose=True )
+#Angular separations on sky from NGC1052:
+#       DA193 = 65.75 deg
+#       3C286 = 152.38 deg
+#       3C273 = 146.57 deg
+#Nearest = DA193
+```
 
 
 -----------------------

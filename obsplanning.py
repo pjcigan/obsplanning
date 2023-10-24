@@ -6652,18 +6652,26 @@ SRC_3C295=create_ephem_target('3C295','14:11:20.519','52:12:09.97')
 
 
 
-def nearest_from_target_list(obstarget,reference_source_list,verbose=False):
+def nearest_from_target_list(obstarget, reference_source_list, verbose=False, stat='median', return_format='name'):
     """
-    For a given observation target, determine the nearest from among a list of reference sky targets.
+    For a given observation target (or list of targets), determine the nearest 
+    from among a list of reference sky targets.
     
     Parameters
     ----------
-    obstarget : ephem.FixedBody()
-        The sky source of interest. 
+    obstarget : ephem.FixedBody(), or array-like of ephem.FixedBody()
+        The sky source(s) of interest. 
     reference_source_list : array-like [list, tuple, np.array...]
         The list of reference objects, in ephem.FixedBody() format
     verbose : bool
         Set to True to print out the distance to each source in reference_source_list
+    stat : str
+        The statistic to use for calculating the nearest, when multiple 
+        obstargets are input: 'median' or 'mean'/'average'
+    return_format : str
+        The type of object to return: 'name' returns only the nearest source name, 
+        'source' returns the nearest ephem target object, 'separations' returns
+        the array of separations 
     
     Returns
     -------
@@ -6674,17 +6682,49 @@ def nearest_from_target_list(obstarget,reference_source_list,verbose=False):
     --------
     obs.nearest_from_target_list(obstarget,[obs.SRC_3C84,obs.SRC_3C286,obs.SRC_3C273],verbose=True)
     """
-    angseps=[]
-    for refsrc in reference_source_list:
-        angseps.append(skysep_fixed_single(obstarget,refsrc))
-    if verbose==True: 
-        print('\nAngular separations on sky from %s:'%(obstarget.name))
-        for i in range(len(reference_source_list)): 
-            print('  %10s = %.2f deg'%(reference_source_list[i].name,angseps[i]))
-    return reference_source_list[np.nanargmin(angseps)].name
+    
+    angseps = []
+    
+    if hasattr(obstarget,'__len__'):
+        ### Multiple obstargets        
+        for refsrc,i in zip(reference_source_list,range(len(reference_source_list))):
+            #angseps[i] = [skysep_fixed_single(t,refsrc) for t in obstarget]
+            angseps.append( [skysep_fixed_single(t,refsrc) for t in obstarget] )
+        angseps=np.array(angseps)
+        if 'av' in stat.lower() or stat.lower()=='mean':
+            angsep_stats = np.nanmean(angseps, axis=1)
+        else: 
+            angsep_stats = np.nanmedian(angseps, axis=1)
+        
+        nearest_target = reference_source_list[np.nanargmin(angsep_stats)]
+        
+        if verbose==True: 
+            print('\n%s angular separations on sky from %s (deg):'%(stat, [t.name for t in obstarget]))
+            for i in range(len(reference_source_list)): 
+                #print('  %10s = %s'%(reference_source_list[i].name,angseps[i]))
+                print('  %10s = %.2f deg'%(reference_source_list[i].name,angsep_stats[i]))
+            print('Nearest = %s'%(nearest_target.name))
+        
+    else:
+        ### Only one obstarget 
+        for refsrc in reference_source_list:
+            angseps.append(skysep_fixed_single(obstarget,refsrc))
+        nearest_target =  reference_source_list[np.nanargmin(angseps)]
+        if verbose==True: 
+            print('\nAngular separations on sky from %s:'%(obstarget.name))
+            for i in range(len(reference_source_list)): 
+                print('  %10s = %.2f deg'%(reference_source_list[i].name,angseps[i]))
+            print('Nearest = %s'%(nearest_target.name))
+    
+    if 'nam' in return_format.lower(): 
+        return nearest_target.name
+    elif 'sep' in return_format.lower(): 
+        return angseps
+    else: return nearest_target
+    
     
 
-def nearest_standard_fringefinder(obstarget,verbose=False):
+def nearest_standard_fringefinder(obstarget,verbose=False, stat='median', return_format='name'):
     """
     For a given observation target, determine the nearest fringe finder, and optionally print the distance to standard fringe finders. 
     
@@ -6694,6 +6734,13 @@ def nearest_standard_fringefinder(obstarget,verbose=False):
         The sky source of interest. 
     verbose : bool
         Set to True to print out the distance to each fringe finder
+    stat : str
+        The statistic to use for calculating the nearest, when multiple 
+        obstargets are input: 'median' or 'mean'/'average'
+    return_format : str
+        The type of object to return: 'name' returns only the nearest source name, 
+        'source' returns the nearest ephem target object, 'separations' returns
+        the array of separations 
     
     Returns
     -------
@@ -6720,7 +6767,7 @@ def nearest_standard_fringefinder(obstarget,verbose=False):
     #    for i in range(len(ffsrcs)): print('  %10s = %.2f deg'%(ffsrcs[i].name,ffseps[i]))
     #return ffsrcs[np.nanargmin(ffseps)].name
     
-    src_nearest = nearest_from_target_list(obstarget, [SRC_3C84, SRC_DA193, SRC_4C39p25, SRC_3C273, SRC_3C345, SRC_1921m293, SRC_3C454p3, SRC_0234p285, SRC_0528p134, SRC_J1800p3848, SRC_2007p777], verbose=verbose)
+    src_nearest = nearest_from_target_list(obstarget, [SRC_3C84, SRC_DA193, SRC_4C39p25, SRC_3C273, SRC_3C345, SRC_1921m293, SRC_3C454p3, SRC_0234p285, SRC_0528p134, SRC_J1800p3848, SRC_2007p777], verbose=verbose, stat=stat, return_format=return_format)
     
     return src_nearest
 
