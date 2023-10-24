@@ -394,8 +394,7 @@ gal_targets = [obs.create_ephem_target(n,*obs.query_object_coords_simbad(n))
 
 for t in gal_targets:
   print('  %4s : [ %s, %s]'%(t.name,
-     *obs.dec2sex(t.a_ra*180/np.pi, t.a_dec*180/np.pi, as_string=True,
-     decimal_places=4) ) )
+     *obs.eph2c(t, as_string=True, decimal_places=4) ) )
 #    m1 : [ 05:34:30.9000, 22:00:53.0000]
 #   m31 : [ 00:42:44.3300, 41:16:07.5000]
 #   m33 : [ 01:33:50.8965, 30:39:36.6300]
@@ -406,8 +405,8 @@ for t in gal_targets:
 
 ##Note that we could also just use  
 #  print('  %4s : [ %s, %s]'%(t.name, t.a_ra, t.a_dec)
-#However using dec2sex to create the string representations from the stored
-# ephem coords (in radians) allows more customization.
+#However using eph2c or dec2sex to create the string representations from the
+# stored ephem coords (in radians) allows more customization.
 ```
 
 Quickly calculate the min and max source separations.

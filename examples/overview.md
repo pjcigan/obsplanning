@@ -397,6 +397,25 @@ print(' Coordinates at epoch=%s : RA = %s , DEC = %s'%(crab_coords_2050.epoch,
 ```
 
 
+Obsplanning has a convenience function to output the RA,DEC coordinates from an ephem target source object, called ```eph2c()```.  This is useful for including compactly in functions to print or convert output.  Options for output style are sexagesimal (calling ```obs.dec2sex``` under the hood, and optionally taking its keyword args), degrees, hours (for RA), radians, or astropy.coordinates.SkyCoord.  
+```python
+obs.eph2c(crab) #,style='sex')
+# ([5, 34, 31.93999999999869], [22, 0, 52.20000000000624])
+obs.eph2c(crab, style='sex', as_string=True, decimal_places=3)
+# ['05:34:31.940', '22:00:52.200']
+obs.eph2c(crab, style='deg')
+# [83.63308333333333, 22.0145]
+obs.eph2c(crab, style='hour')
+# [5.575538888888889, 22.0145]
+obs.eph2c(crab, style='rad')
+# [1.4596726677614609, 0.3842255081802917]
+obs.eph2c(crab, style='skycoord')
+# <SkyCoord (ICRS): (ra, dec) in deg
+#    (83.63308333, 22.0145)>
+```
+By default this returns the astrometric/absolute coordinates stored in the object as target.a_ra and target.a_dec.  However, there is an option to return apparent coords (target.ra, target.dec) by setting ```apparent=True```, if the ephem object ephemeris info has already been updated with .compute()
+
+
 
 
 ### Various calculations and tools

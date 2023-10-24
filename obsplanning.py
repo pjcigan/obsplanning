@@ -528,6 +528,60 @@ def sex2dec(longin,latin,RAhours=True,order='radec'):
     if 'lat' in order[:3].lower() or 'dec' in order[:3].lower(): return [latout,longout]
     else: return [longout,latout]
 
+def eph2c(target, style='sex', apparent=False, **kwargs):
+    """
+    Convenience function to return equatorial (RA,DEC) coordinates from the 
+    ephem target source in the specified style: sexagesimal string, degrees, or 
+    radians.  
+    To return coordinates at specific epochs or other coordinate systems such as 
+    Galactic, use the formal ephem functionality, e.g.
+    ephem.Galactic(target, epoch=ephem.J2000)
+    
+    Parameters
+    ----------
+    target : ephem.FixedBody(), ephem.Sun(), or ephem.Moon()
+        The source of interest on the sky.  Object must already be instantiated 
+        and coordinates computed with .compute().
+    style : str
+        Style of output coordinates. 
+        'sex' = sexagesimal coordinates from obs.dec2sex (can optionally specify 
+                kwargs)
+        'deg' = decimal degrees.
+        'hour' = decimal hours for RA, degrees for DEC
+        'rad' = radians         
+    apparent : bool
+        Whether to use apparent coordinates from the pre-computed epoch instead 
+        of the absolute/astrometric coordinates.  Default is False (use absolute
+        coords).  If True, uses [target.ra, target.dec] instead of 
+        [target.a_ra, target.a_dec]
+        Note - for objects like Sun and Moon, must use apparent=True
+    kwargs : bool, in, or str
+        Keyword args for obs.dec2sex:  as_string, decimal_places, str_format
+    
+    Returns
+    -------
+    coords : list, str, or astropy.coordinates.SkyCoord
+        The output coordinates, in the format specified by style
+    """
+    if apparent==True:
+        ra_rad = target.ra
+        dec_rad = target.dec
+    else:
+        ra_rad = target.a_ra
+        dec_rad = target.a_dec
+    if 'rad' in style.lower():
+        return [ra_rad, dec_rad]
+    elif 'deg' in style.lower() or 'dec' in style.lower():
+        return [ra_rad*180/np.pi, dec_rad*180/np.pi]
+    elif 'hr' in style.lower() or 'hour' in style.lower():
+        return [ra_rad*180/np.pi/15, dec_rad*180/np.pi]
+    elif 'sex' in style.lower():
+        return dec2sex(ra_rad*180/np.pi, dec_rad*180/np.pi, **kwargs)
+    elif 'sky' in style.lower() or 'sc' in style.lower() or 'ap' in style.lower():
+        return coordinates.SkyCoord(ra_rad*u.rad, dec_rad*u.rad)
+    else: raise Exception('obs.eph2c: invalid input style="%s". Choose from [deg,rad,hour,sex,skycoord] '%(style))
+
+
 def vincenty_sphere(lon1,lat1, lon2,lat2, units='rad', input_precision=np.float64):
     """
     Full great-circle angle separation between two positions, from Vincenty ellipsoid equation.

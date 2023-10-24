@@ -1,6 +1,6 @@
 # 1.1
 
-### 1.1.0, 2023-10-23
+1.1.0, 2023-10-23
 
 * New functions and updates
     - Updated the angulardistance() function to use an updated form of the Vincenty equation, which is a special case for perfect spheres and now valid for arbitrarily small angles.  (The previous form suffered from occasional numerical instability and small angle errors)  Now users can specify returncomponents='cartesian' to get longitude component calculated along line of constant latitude (i.e. with cos(latitude) taken into account) or returncomponents='spherical' to get spherically orthogonal components (following orthogonal great circle arcs).
@@ -11,18 +11,19 @@
     - Added convenience functions to make a plot of sun(&moon) separations from a target source over the course of a specified year
     - Added convenience functions for printing daily sunseps and moonseps, with option to only print values for a candence of every N days
     - Added convenience function print_VLBA_observability_summary().  With minimal configuring, prints source observability every N days in the specified range, and also estimates start times dynamic scheduling.
+    - Added convenience function eph2c() to take in an ephem source and output the RA,DEC coordinates. Output styles are degrees, radians, sexagesimal using obs.dec2sex and optional kwargs, or astropy.coordinates.SkyCoord
 
 
 # 1.0
 
-### 1.0.2, 2023-09-24
+1.0.2, 2023-09-24
 
 * Minor fixes and tweaks (1.0.2)
     - Merged pull request to remove numpy.warnings filter, due to it being removed from recent np versions and crashing obsplanning on import
     - package multicolorfits has been moved to 'extras' instead of a requirement.  Functions for plotting images (finder plots) will fail without it, but it requires QT - maintaining QT compatibility on various systems and software versions has become a headache, and the rest of the obsplanning package need not be held hostage by the image plotting dependencies.
 
 
-### 1.0.0, 2021-10-03
+1.0.0, 2021-10-03
 
 * Initial release
     - pyephem-based time conversions, observers (telescope), and target source (sky) objects
