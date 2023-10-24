@@ -558,7 +558,97 @@ print( np.degrees([ephem.Ecliptic(src2).lon,ephem.Ecliptic(src2).lat]) )
 There are also helper functions ```vincenty_sphere()``` and ```angulardistance()``` for computing separations with inputs given as simple floats rather than ephem objects.  See their API entries for more details.  
 
 
+##### Searching for sources within a radius
 
+There are two simple cone search functions in obsplanning, for determining which sources from an array fall within a specified separation radius on the sky.  ```sources_within_radius()``` will take a list (or tuple, array...) of ephem targets, and a reference position (which can be an ephem target, an astropy SkyCoord, or a list of [RA,DEC] values that can be parsed by ephem).  The reference position can be an ephem.Sun or Moon instance, as long as it has been instantiated and updated with time and Observer using .compute(). You can request output as the list of ephem sources themselves, just the names, the indices for the valid sources, or the numpy mask that would return the valid list -- which can be useful in scripting.  Here is an example for a handful of bright Messier sources in the Virgo cluster.
+```python
+# Let obsplanning automatically query coordinates for some targets
+virgo_targets = [obs.create_ephem_target(n,*obs.query_object_coords_simbad(n))
+             for n in ['m87', 'm85', 'm60', 'm49', 'm90', 'm98']]
+
+for t in virgo_targets:
+    print('  %4s : [ %s, %s]'%(t.name, t.a_ra, t.a_dec) )
+#   m87 : [ 12:30:49.42, 12:23:28.0]
+#   m85 : [ 12:25:24.05, 18:11:27.9]
+#   m60 : [ 12:43:39.97, 11:33:09.7]
+#   m49 : [ 12:29:46.80, 8:00:01.0]
+#   m90 : [ 12:36:49.80, 13:09:46.5]
+#   m98 : [ 12:13:48.29, 14:54:02.0]
+
+# Which of these sources are within 3 degrees of the Virgo cluster center?
+obs.sources_within_radius(virgo_targets, ['12:27:00','12:43:00'], 3.0,
+    direction='inside', return_format='names')
+#--> np.array(['m87', 'm90'])
+
+# Which of these Virgo sources are further than 4 degrees from M87 (which is the
+#  zeroth-index of virgo_targets)?  Use direction='outside'
+obs.sources_within_radius(virgo_targets[1:], virgo_targets[0], 4.0,
+    direction='outside', return_format='names')
+#--> np.array(['m85', 'm49', 'm98'])
+
+## The first example again (M87 and M90 within 3 deg of the center), but now
+#  instead of just the names, return the indices, the numpy mask, and the array
+#  of ephem targets themseleves
+obs.sources_within_radius(virgo_targets, ['12:27:00','12:43:00'], 3.0,
+    direction='inside', return_format='ind')
+#--> np.array([0, 4])
+
+obs.sources_within_radius(virgo_targets, ['12:27:00','12:43:00'], 3.0,
+    direction='inside', return_format='mask')
+#--> np.array([ True, False, False, False,  True, False])
+
+obs.sources_within_radius(virgo_targets, ['12:27:00','12:43:00'], 3.0,
+    direction='inside', return_format='targets')
+#--> np.array([<ephem.FixedBody 'm87' at 0x7ff64d50d870>,
+#              <ephem.FixedBody 'm90' at 0x7ff64d50ddf0>], dtype=object)
+```
+
+The other function for testing separations from an array of sources is ```srctable_within_radius()```.  This function is intended to work with more typical catalogs of sources, and so the input it takes is a pandas or astropy table (or similar recarray-style object that can be referenced by column names) of source coordinates.  Here is a quick example using the same Virgo galaxies above with pandas:
+```python
+import pandas as import pd
+
+# generate a simple pandas table with columns ['name','RA','DEC'] from the
+# ephem target list above.  It's possible to set all columns in one go initially,
+# then set dtypes later (because of mixing string and float dtypes in the list
+# comprehension), but simpler just to initialize it with the names column first,
+# then set the RA,DEC float columns after.
+
+virgo_table = pd.DataFrame([t.name for t in virgo_targets], columns=['name',])
+virgo_table[['RA','DEC']] = [[t.ra*180/np.pi, t.dec*180/np.pi] for t in virgo_targets]
+
+print(virgo_table)
+#  name          RA        DEC
+#0  m87  188.000690  12.261681
+#1  m85  186.644222  18.060981
+#2  m60  191.209931  11.424425
+#3  m49  187.741156   7.870973
+#4  m90  189.501168  13.033926
+#5  m98  183.747979  14.770090
+
+# Once again, find sources that are within 3 degrees of the cluster center.  Now,
+# specify the column names for the RA and DEC values.
+obs.srctable_within_radius(virgo_table, ['12:27:00','12:43:00'], 3.0,
+    RAlabel='RA', DEClabel='DEC', direction='inside', return_format='sources')
+#  name          RA        DEC
+#0  m87  188.000690  12.261681
+#4  m90  189.501168  13.033926
+##--> Now the output is a table slice
+
+## Other equivalent formats that would work for the reference position coordinates:
+
+#float degrees  [186.75, 12.716666666666667]
+ref_crd = [186.75, 12.716666666666667]
+obs.srctable_within_radius(virgo_table, ref_crd, 3.0)
+
+#SkyCoord       <SkyCoord (ICRS): (ra, dec) in deg
+#                   (12.45, 12.71666667)>
+ref_crd = obs.coordinates.SkyCoord('12:27:00', '12:43:00', unit='deg')
+obs.srctable_within_radius(virgo_table, ref_crd, 3.0)
+```
+This function may be useful for simple selections of sources from lists such as the Gaia or ICRF3 catalogs.
+
+
+##### Nearest source from a list
 
 If you have a list of, e.g., potential calibrator targets and want to determine which of them is closest to your science target, this can be determined easily like in the following example that calculates the nearest of a set of standard calibrators to NGC 1052.  
 ```python

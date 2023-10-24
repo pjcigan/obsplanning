@@ -65,6 +65,10 @@ from matplotlib import rcParams
 import matplotlib.patches as patches
 import matplotlib.patheffects as PathEffects
 
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse, AnchoredSizeBar
+try: from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText  #Matplotlib <2.1
+except: from matplotlib.offsetbox import AnchoredText                   #Matplotlib >=2.1
+
 from scipy import interpolate #--> Currently only needed for calculate_antenna_visibility_limits()
 from tqdm import tqdm
 
@@ -252,6 +256,40 @@ def wrap_pmPI(valin):
     val_red=valin%(2*np.pi)-(2*np.pi)
     valout=val_red+[(2*np.pi) if val_red<=-np.pi else 0.][0]
     return valout
+
+def wrap_center_pmrange(valin, center_val, pm_range):
+    """Wraps values (scalar/floats or array-likes) to a specified range 
+    surrounding a specified center value. [(value + centershift)%(newrange)]
+    Useful specifying like this for, e.g., all-sky rotations.
+    [Taken from skyplothelper ]
+    
+    Parameters
+    ----------
+    valin : float, or array-like of floats
+        The input values to be wrapped to the new range
+    center_val : float
+        The new range center value
+    pm_range : float
+        The half-range amount -- the plus and minus from the center_val 
+    
+    Returns
+    -------
+    valout : float, or array-like of floats
+        The values wrapped to the new range
+    
+    Examples
+    --------
+    #A.) 271 mapped to 90 +/- 180 ([-90,270] range) --> -89
+    obs.wrap_center_pmrange(271, 90, 180)  #-89
+    #B.) Map values [45, 200, 359] to the range [-180,180] or 0 +/- 180
+    obs.wrap_center_pmrange([45, 200, 359], 0, 180)  #np.array([45, -160, -1])
+    """
+    #For example, 271 mapped to 90 +/- 180 ([-90,270] range) --> -89
+    #But 0 still falls within the [-90,270] range so remains 0.
+    
+    if np.isscalar(valin)==False: valin=np.array(valin[:])
+    return np.mod(valin - (center_val-pm_range), 2*pm_range) + (center_val-pm_range)
+
 
 def deg2hour(valin):
     """
@@ -5585,18 +5623,42 @@ def download_ukidss_cutouts2(coords, boxwidth_asec, savepathstem, overwrite=Fals
     cutout_imH.writeto(savepathstem+'_ukidssH.fits', overwrite=overwrite)
     cutout_imK = Ukidss.get_images(coords_formatted, waveband='K', radius=boxwidth_asec*u.arcmin)[0][0] 
     cutout_imK.writeto(savepathstem+'_ukidssK.fits', overwrite=overwrite)
-
+download_ukidss_cutouts2.__doc__ += download_ukidss_cutouts.__doc__
 
 ### Producing the finder plots
 
 def add_sizebar(axin, length_pixels, label, loc=4, sep=5, borderpad=0.8, frameon=False, path_effects=[PathEffects.withStroke(foreground='k', linewidth=1.75)], color=None, **kwargs):
     """
-    Add a sizebar to the specified matplotlib axis
+    Add a sizebar to the specified matplotlib axis.
+    
+    Parameters
+    ----------
+    axin : matplotlib axes object (Axes,AxesSubplot...)
+    length_pixels : float
+        The length of the sizebar, in pixels
+    label : str
+        The label for the bar annotation
+    loc : int or str
+        matplotlib location specifier
+    sep : float
+        matplotlib AnchoredSizeBar separation pad value
+    borderpad : float
+        matplotlib AnchoredSizeBar border pad value
+    frameon : bool
+        Whether to make the AnchoredSizeBar frame visible
+    path_effects : list or matplotlib PathEffects
+    color : str or matplotlib color specifier
+    kwargs : various
+        Optional keyword args for AnchoredSizeBar
+    
+    Returns
+    -------
+    asb : matplotlib AnchoredSizeBar
     """
     ### See matplotlib anchoredartist tutorial:  http://matplotlib.org/examples/pylab_examples/anchored_artists.html
-    from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse, AnchoredSizeBar
-    try: from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText  #Matplotlib <2.1
-    except: from matplotlib.offsetbox import AnchoredText                   #Matplotlib >=2.1
+    #from mpl_toolkits.axes_grid1.anchored_artists import AnchoredEllipse, AnchoredSizeBar
+    #try: from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText  #Matplotlib <2.1
+    #except: from matplotlib.offsetbox import AnchoredText                   #Matplotlib >=2.1
     #from mpl_toolkits.axes_grid.anchored_artists import AnchoredDrawingArea
     #asb =  AnchoredSizeBar(axin.transData,length_pixel,label,loc=loc,borderpad=borderpad, sep=sep,frameon=frameon,**kwargs)
     asb =  AnchoredSizeBar(axin.transData, length_pixels, label, loc=loc, borderpad=borderpad, sep=sep, frameon=frameon, **kwargs)
@@ -5611,9 +5673,24 @@ def add_sizebar(axin, length_pixels, label, loc=4, sep=5, borderpad=0.8, frameon
 
 def bgpars2pix(arrin,headerin,precise=True):
     """
-    ### Gets the regions in terms of image coordinates: 
-    takes array [RA (dec), DEC (dec), Rmaj (deg), Rmin (deg), PA (deg., N from W)] \n
-    Converts these angular (degree) RA,DEC,Rmaj,Rmin values to pixel values using the supplied fits header.
+    Calculate ellipse region params in terms of image/pixel coordinates -- 
+    takes array [RA (dec), DEC (dec), Rmaj (deg), Rmin (deg), PA (deg., N from W)].
+    Converts these angular (degree) RA,DEC,Rmaj,Rmin values to pixel values using the 
+    supplied fits header.  Note the position angle follows the math definition 
+    (CCW from x=0) not the astronomical convention (CCW from N).
+    
+    Parameters
+    ----------
+    arrin : list
+        [RA (degrees), DEC (degrees), Rmaj (deg), Rmin (deg), PA (deg., N from W)]
+    headerin : astropy.io.fits.Header
+    precise : bool
+        Whether to apply sub-pixel precision for coordinate conversion
+    
+    Returns
+    -------
+    arrout : list
+        [Center_xpix, Center_ypix, Rmaj_pix, Rmin_pix, P.A.(CCW from x=0)]
     """
     cpix=mcf.convsky2pix(headerin,arrin[0],arrin[1],precise=precise); 
     try: cd2=mcf.getcdelts(headerin)[1]
@@ -5671,7 +5748,9 @@ def make_finder_plot_singleband(targetname, coords, boxwidth, survey='DSS2 Red',
     Example
     -------
     refstars=[['5:34:42.3','22:10:34.5','HD 244988'], ['5:34:36.6','21:37:19.9','HD 36707'],]
-    obs.make_finder_plot_singleband('Crab Nebula', 'M1', 50., boxwidth_units='arcmin', survey='DSS2 Red', search_name=True, refregs=refstars, cmap='gist_yarg', dpi=200, tickcolor='0.2', mfc='r', mec='w', bs_amin=10., )
+    obs.make_finder_plot_singleband('Crab Nebula', 'M1', 50., boxwidth_units='arcmin', 
+        survey='DSS2 Red', search_name=True, refregs=refstars, cmap='gist_yarg', dpi=200, 
+        tickcolor='0.2', mfc='r', mec='w', bs_amin=10., )
     """
     
     rcparams_initial = {'xtick.major.size':rcParams['xtick.major.size'], 'ytick.major.size':rcParams['ytick.major.size'], 'xtick.minor.size':rcParams['xtick.minor.size'], 'ytick.minor.size':rcParams['ytick.minor.size'], 'grid.linestyle':rcParams['grid.linestyle'], 'grid.linewidth':rcParams['grid.linewidth'], 'xtick.direction':rcParams['xtick.direction'], 'ytick.direction':rcParams['ytick.direction'], 'xtick.minor.visible':rcParams['xtick.minor.visible'], 'ytick.minor.visible':rcParams['ytick.minor.visible']}
@@ -6644,6 +6723,117 @@ def nearest_standard_fringefinder(obstarget,verbose=False):
     src_nearest = nearest_from_target_list(obstarget, [SRC_3C84, SRC_DA193, SRC_4C39p25, SRC_3C273, SRC_3C345, SRC_1921m293, SRC_3C454p3, SRC_0234p285, SRC_0528p134, SRC_J1800p3848, SRC_2007p777], verbose=verbose)
     
     return src_nearest
+
+
+def srctable_within_radius(src_table, ref_coords, sep_deg, RAlabel='RA', DEClabel='DEC', direction='inside', return_format='sources'):
+    """
+    For a pandas or astropy table of sources with columns for RA,DEC coordinates 
+    decimal degrees, determine which sources fall within (or, alternatively, 
+    outside of) a separation radius from specified reference coordinates. 
+    Essentially a simple cone search.  The sources are first filtered by a crude 
+    RA/DEC cut to speed things up considerably.
+    
+    Parameters
+    ----------
+    src_table : pandas or astropy table 
+        Table of sources with columns for RA and DEC being in decimal degrees format
+    ref_coords : array-like of floats, or astropy.coordinates.SkyCoord
+        Reference coordinates for obs.angulardistance calculation, either [RA,DEC] 
+        values in decimal degrees or a SkyCoord object.
+    sep_deg : float 
+        The separation radius to use, in degrees
+    RAlabel : str
+        The source table column name for RA, which has values in decimal degrees
+    DEClabel : str
+        The source table column name for DEC, which has values in decimal degrees
+    direction : str
+        'inside'/'outside'.  Return sources inside/outside of this separation radius.
+    return_format : str
+        Determines what to return.  'mask' for the boolean array mask, 'inds' for 
+        the indices, or 'sources' for the source table slice
+    
+    Returns
+    -------
+    output : pandas/astropy table slice, or array-like
+        Sliced table, indices, or mask for sources that fall within the 
+        specified separation radius.
+    """
+    
+    if type(ref_coords)==coordinates.SkyCoord:
+        ref_coords_dec = [ref_coords.ra.value, ref_coords.dec.value]
+    else:
+        ref_coords_dec = list(ref_coords)
+    if type(ref_coords_dec[0])==str:
+        ref_coords_dec = sex2dec(*ref_coords_dec)
+    
+    sepmask = np.zeros(src_table.shape[0]).astype(bool)
+    #wrapping RA coords here around a center value of the ref coord RA, to prevent clipping near bounds
+    sepmask[ (np.abs( wrap_center_pmrange(src_table[RAlabel],ref_coords_dec[0],180) - ref_coords_dec[0] )<sep_deg) & 
+        (np.abs(src_table[DEClabel]-ref_coords_dec[1])<sep_deg) ] = True 
+    for s in np.where(sepmask==True)[0]:
+        if obs.angulardistance( ref_coords_dec, src_table.iloc[s][[RAlabel,DEClabel]] ) >=sep_deg: sepmask[s]=False
+    if 'out' in direction.lower(): sepmask = ~sepmask
+    if 'mask' in return_format.lower(): return sepmask
+    elif 'ind' in return_format.lower(): return np.where(sepmask==True)[0]
+    else: return src_table[sepmask]
+
+def sources_within_radius(src_list, ref_pos, sep_deg, direction='inside', return_format='sources'):
+    """
+    Determine which ephem target sources fall within (or, alternatively, 
+    outside of) a separation radius from specified reference target/position. 
+    Essentially a simple cone search.  
+    
+    Parameters
+    ----------
+    src_list : array-like of ephem target sources
+        Table of sources with columns for RA and DEC being in decimal degrees format
+    ref_pos : ephem target source, array-like of floats, or astropy.coordinates.SkyCoord
+        Reference position for obs.angulardistance calculation, either [RA,DEC] 
+        values in decimal degrees, an ephem target source, or a SkyCoord object.
+    sep_deg : float 
+        The separation radius to use, in degrees
+    direction : str
+        'inside'/'outside'.  Return sources inside/outside of this separation radius.
+    return_format : str
+        Determines what to return.  'mask' for the boolean array mask, 'inds' for 
+        the indices, or 'sources' for the source table slice
+    
+    Returns
+    -------
+    output : pandas/astropy table slice, or array-like
+        Sliced table, indices, or mask for sources that fall within the 
+        specified separation radius.
+    
+    Examples
+    --------
+    virgo_targets = [obs.create_ephem_target(n,*obs.query_object_coords_simbad(n))
+                 for n in ['m87', 'm85', 'm60', 'm49', 'm90', 'm98']]
+    # Which of these sources are within 3 degrees of the Virgo cluster center?
+    obs.sources_within_radius(virgo_targets, ['12:27:00','12:43:00'], 3.0, 
+        direction='inside', return_format='names')
+    #--> ['m87', 'm90']
+    # Which of these Virgo sources are further than 4 degrees from M87?
+    obs.sources_within_radius(virgo_targets[1:], virgo_targets[0], 4.0, 
+        direction='outside', return_format='names')
+    #--> ['m85', 'm49', 'm98']
+    """
+    
+    if type(ref_pos)==coordinates.SkyCoord:
+        ref_tar = create_ephem_target('refpos',ref_pos.ra.value, ref_pos.dec.value)
+    elif hasattr(ref_pos,'__len__')==True:
+        #For now, just do simple test if the ref_pos has a length attribute to test
+        # if it's a list/tuple/array/etc of coordinates
+        ref_tar = create_ephem_target('refpos',ref_pos[0], ref_pos[1])
+    else:
+        ref_tar = ref_pos.copy() #Make a copy of the ephem target
+    
+    sepmask = np.array([skysep_fixed_single(ref_tar,s)<=sep_deg for s in src_list])
+    if 'out' in direction.lower(): sepmask = ~sepmask
+    if 'mask' in return_format.lower(): return sepmask
+    elif 'ind' in return_format.lower(): return np.where(sepmask==True)[0]
+    elif 'nam' in return_format.lower(): return np.array([s.name for s in src_list])[sepmask]
+    else: return np.array(src_list)[sepmask]
+
 
 
 
