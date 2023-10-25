@@ -5015,6 +5015,7 @@ def plot_observing_tracks(target_list, observer, obsstart, obsend, weights=None,
     
     axin.set_ylim(0,90)
     axin.xaxis.set_major_formatter(xaxisformatter)#hourformat)
+    axin.xaxis.set_minor_locator(mdates.HourLocator())#HourLocator(byhour=range(24), interval=1, tz=None)
     axin.set_xlabel('UTC Time, for Local Starting Night %s'%(str(obsstart.datetime().date()))); plt.ylabel('Altitude [deg]')
     plt.grid(True,color='0.92')#,'both')
     
@@ -5043,6 +5044,7 @@ def plot_observing_tracks(target_list, observer, obsstart, obsend, weights=None,
         for i in range(len(times_utc)): times_local[i]=times_utc[i].astimezone(pytz.timezone(timezone))
         axin3.set_xlim(times_local[0],times_local[-1],auto=True) #Local time... still need to set tz set below...
         axin3.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M',tz=times_local[0].tzinfo)) #NEED to set tz for axis update!
+        axin3.xaxis.set_minor_locator(mdates.HourLocator(tz=times_local[0].tzinfo))#HourLocator(byhour=range(24), interval=1, tz=None)
         axin3.set_xlabel('Local Time $\\rightarrow$', x=-.08, va='top') 
         axin3.text(-.04, 0.95, '(%s)\nUTC offset = %i'%(times_local[0].tzinfo.zone,utcoffset),va='bottom', ha='right', transform=axin3.transAxes, color='k', fontsize=8)
     
@@ -5183,6 +5185,7 @@ def plot_visibility_tracks_toaxis(target_list, observer, obsstart, obsend, axin,
     axin.set_xlim(times_utc[0],times_utc[-1]); 
     axin.set_ylim(0,90)
     axin.xaxis.set_major_formatter(xaxisformatter)
+    axin.xaxis.set_minor_locator(mdates.HourLocator())#HourLocator(byhour=range(24), interval=1, tz=None)
     axin.set_xlabel('UTC Time, Starting %s'%(str(obsstart.datetime().date()))); plt.ylabel('Altitude [deg]')
     plt.grid(True,color='0.92')#,'both')
     
@@ -5211,6 +5214,7 @@ def plot_visibility_tracks_toaxis(target_list, observer, obsstart, obsend, axin,
         for i in range(len(times_utc)): times_local[i]=times_utc[i].astimezone(pytz.timezone(timezone))
         axin3.set_xlim(times_local[0],times_local[-1],auto=True) #Local time... still need to set tz set below...
         axin3.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M',tz=times_local[0].tzinfo)) #NEED to set tz for axis update!
+        axin3.xaxis.set_minor_locator(mdates.HourLocator(tz=times_local[0].tzinfo))#HourLocator(byhour=range(24), interval=1, tz=None)
         axin3.set_xlabel('Local Time $\\rightarrow$', x=-.08, va='top') 
         axin3.text(-.04, 0.95, '(%s)\nUTC offset = %i'%(times_local[0].tzinfo.zone,utcoffset),va='bottom', ha='right', transform=axin3.transAxes, color='k', fontsize=8)
 
@@ -5357,6 +5361,7 @@ def plot_VLBA_visibility_tracks_toaxis(target,obsstart,obsend, axin, weights=Non
     axin.set_ylim(0,90)
     #axin.xaxis.set_major_formatter(mdates.DateFormatter('%H'))#,mdates.DateFormatter('%H:%M'))
     axin.xaxis.set_major_formatter(xaxisformatter)
+    axin.xaxis.set_minor_locator(mdates.HourLocator())#HourLocator(byhour=range(24), interval=1, tz=None)
     axin.set_xlabel('UTC Time'); plt.ylabel('Altitude [deg]')
     plt.tight_layout()
 
