@@ -36,7 +36,7 @@ Tools to plan your astronomical observations, from simple conversions of coordin
 * matplotlib
 * datetime
 * pytz
-* tzwhere
+* timezonefinder
 * astropy
 * ephem
 * astroquery

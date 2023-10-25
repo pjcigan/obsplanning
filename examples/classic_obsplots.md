@@ -171,7 +171,7 @@ plt.savefig('ngc1052_fullVLBA_april15.jpg'); plt.clf(); plt.close('all')
 obs.plot_visibility_tracks( target_list,observer,obsstart,obsend, weights=None,
     duration_hours=0, plotmeantransit=False, timezone='calculate',
     xaxisformatter=mdates.DateFormatter('%H:%M'), figsize=(14,8), dpi=200,
-    savepath='ngc1052_fullVLBA_april15.jpg', showplot=False )
+    savepath='descriptive_name.jpg', showplot=False )
 ```
 ![General plotting of visibility tracks to matplotlib axes](../images/ngc1052_fullVLBA_april15.jpg "General function plotting visibility tracks to matplotlib axes")
 

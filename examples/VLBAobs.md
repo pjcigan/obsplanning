@@ -122,7 +122,7 @@ plt.show(); plt.clf(); plt.close('all')
 To print out the Sun separations each day in a month, there is a built-in function for printing them every N days:
 ```python
 # Every 7 days at noon - June 1,8,15,22,29
-daily_sunseps(ngc1052, obs.vlbaBR, '2021/06/01 12:00:00', '2021/06/30 12:00:00',
+obs.daily_sunseps(ngc1052, obs.vlbaBR, '2021/06/01 12:00:00', '2021/06/30 12:00:00',
     every_N_days=7)
 #NGC1052
 #  On 2021/6/1 12:00:00, Sun separation = 41.6 deg
@@ -139,7 +139,7 @@ junestart=ephem.Date('2021/06/01 00:00:00');
 juneend=ephem.Date('2021/06/30 23:59:59');
 days_june=np.linspace(junestart, juneend, int(np.round(juneend-junestart))+1 )
 
-ngc1052_sunseps_june=obs.sunsep_timearray(ngc1052,obs.vlbaBR,days_june)
+ngc1052_sunseps_june = obs.sunsep_timearray(ngc1052,obs.vlbaBR,days_june)
 for d in range(len(days_june)):
     print('  On %s, Sun separation = %.1f deg'%(str(ephem.Date(days_june[d])),
           ngc1052_sunseps_june[d]))
@@ -308,7 +308,7 @@ ff_seps_ngc1052 = obs.nearest_standard_fringefinder(ngc1052, return_format='sepa
 If you want to determine the nearest fringe finder to a _group_ of science targets, simply input the group as a list:
 ```python
 obs.nearest_standard_fringefinder([Mrk348,ngc1052,ngc3147,ngc2992], verbose=True, stat='median')
-median angular separations on sky from ['Mrk348', 'NGC1052', 'NGC3147', 'NGC2992'] (deg):
+#median angular separations on sky from ['Mrk348', 'NGC1052', 'NGC3147', 'NGC2992'] (deg):
 #        3C84 = 52.47 deg
 #       DA193 = 63.24 deg
 #     4C39.25 = 74.24 deg

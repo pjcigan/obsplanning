@@ -3248,7 +3248,7 @@ def daily_moonseps(target,observer,tstart,tend, every_N_days=1, verbose=True):
     simstart = ephem.Date(tstart); 
     simend = ephem.Date(tend); 
     days_sim = np.arange(simstart, simend, every_N_days )
-    target_moonseps = obs.moonsep_timearray(target,observer,days_sim)
+    target_moonseps = moonsep_timearray(target,observer,days_sim)
     if verbose==True:
         print(target.name)
         for d in range(len(days_sim)):
@@ -3409,7 +3409,7 @@ def daily_sunseps(target,observer,tstart,tend, every_N_days=1, verbose=True):
     simstart = ephem.Date(tstart); 
     simend = ephem.Date(tend); 
     days_sim = np.arange(simstart, simend, every_N_days )
-    target_sunseps = obs.sunsep_timearray(target,observer,days_sim)
+    target_sunseps = sunsep_timearray(target,observer,days_sim)
     if verbose==True:
         print(target.name)
         for d in range(len(days_sim)):
@@ -3574,19 +3574,19 @@ def plot_sunseps_year(target, observer, year, min_sep_val=8.4, min_sep_type='fre
     of each month, to aid easy by-eye estimations.
     """
     if 'freq' in min_sep_type.lower() or 'vlba' in min_sep_type.lower():
-        min_sep_deg = obs.VLBA_freq_minimum_sun_separation(min_sep_val)
+        min_sep_deg = VLBA_freq_minimum_sun_separation(min_sep_val)
     elif 'deg' in min_sep_type.lower():
         min_sep_deg = float(min_sep_val)
     else: raise Exception('plot_sunseps_year(): min_sep_type "%s" not understood.  Use "freq" or "deg"'%(min_sep_type)) 
     
-    times_year_utc = obs.create_obstime_array(dt.datetime(int(year),1,1,0,0,0), dt.datetime(int(year),12,31,0,0,0), timezone_string='UTC', n_steps=365)
-    target_sunseps=obs.sunsep_timearray(target,observer,times_year_utc)
+    times_year_utc = create_obstime_array(dt.datetime(int(year),1,1,0,0,0), dt.datetime(int(year),12,31,0,0,0), timezone_string='UTC', n_steps=365)
+    target_sunseps = sunsep_timearray(target,observer,times_year_utc)
     
     ax1=plt.subplot(111)
     ax1.plot(times_year_utc,target_sunseps, color='#9F2305', label='Sun')
     
     if moon==True:
-        target_moonseps=obs.moonsep_timearray(target,observer,times_year_utc)
+        target_moonseps = moonsep_timearray(target,observer,times_year_utc)
         plt.plot(times_year_utc,target_moonseps, color='#336699', zorder=-1, label='Moon')
         plt.legend(loc='best')
         
@@ -4345,7 +4345,7 @@ def calc_optimal_slew_loop(targets, optimize_by='separation', verbose=False, rep
             # simultaneously, and simply use the larger of the two
             for k in range(len(p)-1):
                 #DEC_time_i = np.abs(p[k].a_dec-p[k+1].a_dec)*180/np.pi / EL_deg_min
-                sep_i,dRA_i,dDEC_i = obs.angulardistance( np.array([p[k]._ra,p[k]._dec])*180/np.pi, np.array([p[k+1]._ra,p[k+1]._dec])*180/np.pi, returncomponents=True)
+                sep_i,dRA_i,dDEC_i = angulardistance( np.array([p[k]._ra,p[k]._dec])*180/np.pi, np.array([p[k+1]._ra,p[k+1]._dec])*180/np.pi, returncomponents=True)
                 RA_time_i = np.abs(dRA_i) / AZ_deg_min
                 DEC_time_i = np.abs(dDEC_i) / EL_deg_min
                 cumslew[i] += np.max([RA_time_i,DEC_time_i])
@@ -6895,7 +6895,7 @@ def srctable_within_radius(src_table, ref_coords, sep_deg, RAlabel='RA', DEClabe
     sepmask[ (np.abs( wrap_center_pmrange(src_table[RAlabel],ref_coords_dec[0],180) - ref_coords_dec[0] )<sep_deg) & 
         (np.abs(src_table[DEClabel]-ref_coords_dec[1])<sep_deg) ] = True 
     for s in np.where(sepmask==True)[0]:
-        if obs.angulardistance( ref_coords_dec, src_table.iloc[s][[RAlabel,DEClabel]] ) >=sep_deg: sepmask[s]=False
+        if angulardistance( ref_coords_dec, src_table.iloc[s][[RAlabel,DEClabel]] ) >=sep_deg: sepmask[s]=False
     if 'out' in direction.lower(): sepmask = ~sepmask
     if 'mask' in return_format.lower(): return sepmask
     elif 'ind' in return_format.lower(): return np.where(sepmask==True)[0]
