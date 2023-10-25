@@ -16,6 +16,6 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=("docs","images")),
     py_modules=['obsplanning',],
     #python_requires='>2.7',
-    install_requires=['numpy', 'matplotlib', 'astropy', 'datetime', 'pytz', 'tzwhere', 'ephem', 'astroquery', 'scipy', 'tqdm'], 
+    install_requires=['numpy', 'matplotlib', 'astropy', 'datetime', 'pytz', 'timezonefinder', 'ephem', 'astroquery', 'tqdm'], 
     extras_require={'scipy':  ["scipy",], 'multicolorfits': ["multicolorfits",],},
 )

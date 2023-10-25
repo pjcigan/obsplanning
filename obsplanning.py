@@ -49,7 +49,8 @@ from astropy.time import Time
 import astropy.io.fits as pyfits
 import ephem
 import pytz
-from tzwhere import tzwhere
+#from tzwhere import tzwhere
+from timezonefinder import TimezoneFinder
 #import pygeodesy
 
 #For making finder plots:
@@ -247,7 +248,7 @@ def wrap_pmPI(valin):
     
     Example
     -------
-    obs.wrap_pmPI(-0.5*np.pi)  #--> -1.5707963267948966  (-pi/2)
+    obs.wrap_pmPI(-0.5*np.pi)  #--> -1.5707963267948966  (-pi/2)    \n
     obs.wrap_pmPI(1.5*np.pi)   #--> -1.5707963267948966
     
     Note
@@ -260,8 +261,8 @@ def wrap_pmPI(valin):
 
 def wrap_center_pmrange(valin, center_val, pm_range):
     """Wraps values (scalar/floats or array-likes) to a specified range 
-    surrounding a specified center value. [(value + centershift)%(newrange)]
-    Useful specifying like this for, e.g., all-sky rotations.
+    surrounding a specified center value. [(value + centershift)%(newrange)] 
+    Useful specifying like this for, e.g., all-sky rotations. 
     [Taken from skyplothelper ]
     
     Parameters
@@ -280,10 +281,10 @@ def wrap_center_pmrange(valin, center_val, pm_range):
     
     Examples
     --------
-    #A.) 271 mapped to 90 +/- 180 ([-90,270] range) --> -89
-    obs.wrap_center_pmrange(271, 90, 180)  #-89
-    #B.) Map values [45, 200, 359] to the range [-180,180] or 0 +/- 180
-    obs.wrap_center_pmrange([45, 200, 359], 0, 180)  #np.array([45, -160, -1])
+    #A.) 271 mapped to 90 +/- 180 ([-90,270] range) --> -89                     \n
+    obs.wrap_center_pmrange(271, 90, 180)  #-89                                 \n
+    #B.) Map values [45, 200, 359] to the range [-180,180] or 0 +/- 180         \n
+    obs.wrap_center_pmrange([45, 200, 359], 0, 180)  #np.array([45, -160, -1])  \n
     """
     #For example, 271 mapped to 90 +/- 180 ([-90,270] range) --> -89
     #But 0 still falls within the [-90,270] range so remains 0.
@@ -573,7 +574,7 @@ def eph2c(target, style='sex', apparent=False, **kwargs):
     ephem target source in the specified style: sexagesimal string, degrees, or 
     radians.  
     To return coordinates at specific epochs or other coordinate systems such as 
-    Galactic, use the formal ephem functionality, e.g.
+    Galactic, use the formal ephem functionality, e.g. 
     ephem.Galactic(target, epoch=ephem.J2000)
     
     Parameters
@@ -582,17 +583,16 @@ def eph2c(target, style='sex', apparent=False, **kwargs):
         The source of interest on the sky.  Object must already be instantiated 
         and coordinates computed with .compute().
     style : str
-        Style of output coordinates. 
-        'sex' = sexagesimal coordinates from obs.dec2sex (can optionally specify 
-                kwargs)
-        'deg' = decimal degrees.
-        'hour' = decimal hours for RA, degrees for DEC
+        Style of output coordinates. \n
+        'sex' = sexagesimal coordinates from obs.dec2sex (can optionally specify kwargs)\n
+        'deg' = decimal degrees.\n
+        'hour' = decimal hours for RA, degrees for DEC \n
         'rad' = radians         
     apparent : bool
         Whether to use apparent coordinates from the pre-computed epoch instead 
-        of the absolute/astrometric coordinates.  Default is False (use absolute
+        of the absolute/astrometric coordinates.  Default is False (use absolute 
         coords).  If True, uses [target.ra, target.dec] instead of 
-        [target.a_ra, target.a_dec]
+        [target.a_ra, target.a_dec] 
         Note - for objects like Sun and Moon, must use apparent=True
     kwargs : bool, in, or str
         Keyword args for obs.dec2sex:  as_string, decimal_places, str_format
@@ -623,15 +623,15 @@ def eph2c(target, style='sex', apparent=False, **kwargs):
 
 def vincenty_sphere(lon1,lat1, lon2,lat2, units='rad', input_precision=np.float64):
     """
-    Full great-circle angle separation between two positions, from Vincenty ellipsoid equation.
+    Full great-circle angle separation between two positions, from Vincenty ellipsoid equation. 
     This formulation (special case of equal major and minor axes = perfect sphere) is valid for all 
     angles and positions including antipodes, and doesn't suffer from rounding errors at small 
-    angles and antipodes that the standard Vincenty ellipsoid and haversine formulae do.
+    angles and antipodes that the standard Vincenty ellipsoid and haversine formulae do. 
     See https://en.wikipedia.org/wiki/Great-circle_distance 
-    For the particular case of equal major & minor axes (perfect sphere), a form that is
+    For the particular case of equal major & minor axes (perfect sphere), a form that is 
     accurate for all angles and positions, including antipodes, is      angle = \n
-          ( SQRT( (cos(DEC2)sin(RA1-RA2))^2 + (cos(DEC1)sin(DEC2)-sin(DEC1)cos(DEC2)cos(RA1-RA2))^2  )  )
-    arctan( ------------------------------------------------------------------------------------------  )
+          ( SQRT( (cos(DEC2)sin(RA1-RA2))^2 + (cos(DEC1)sin(DEC2)-sin(DEC1)cos(DEC2)cos(RA1-RA2))^2  )  )\n
+    arctan( ------------------------------------------------------------------------------------------  )\n
           (               sin(DEC1)sin(DEC2)+cos(DEC1)cos(DEC2)cos(RA1-RA2)                             )
     
     Parameters
@@ -659,10 +659,10 @@ def vincenty_sphere(lon1,lat1, lon2,lat2, units='rad', input_precision=np.float6
     
     Example
     -------
-    obs.vincenty_sphere(0.,0., np.pi,0.)  #--> 3.141592653589793
-    obs.vincenty_sphere(0.,0., 180,-45., units='deg')    # --> 135.0
-    obs.vincenty_sphere(0.,0., 1e-16,-1e-5, units='deg') # --> 1e-05
-    obs.vincenty_sphere(0.,0., 1e-16,-1e-5, units='deg', input_precision=np.float128)
+    obs.vincenty_sphere(0.,0., np.pi,0.)  #--> 3.141592653589793\n
+    obs.vincenty_sphere(0.,0., 180,-45., units='deg')    # --> 135.0\n
+    obs.vincenty_sphere(0.,0., 1e-16,-1e-5, units='deg') # --> 1e-05\n
+    obs.vincenty_sphere(0.,0., 1e-16,-1e-5, units='deg', input_precision=np.float128)\n
     # --> 1.0000000000000000847e-05
     """
     if 'deg' in units.lower():
@@ -680,9 +680,10 @@ def vincenty_sphere(lon1,lat1, lon2,lat2, units='rad', input_precision=np.float6
 
 def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncomponents=False, input_precision=np.float64):
     """
-    Calculate the angular distance between [RA1,DEC1] and [RA2,DEC2] given in decimal (not sexagesimal). 
-    This function uses coordinate values directly for inputs; to use ephem objects as inputs instead,
-    use obs.skysep_fixed_single(ephemsource1, ephemsource2) 
+    Calculate the angular distance between [RA1,DEC1] and [RA2,DEC2] given in 
+    decimal (not sexagesimal). This function uses coordinate values directly for 
+    inputs; to use ephem objects as inputs instead, use 
+    obs.skysep_fixed_single(ephemsource1, ephemsource2) 
     
     Parameters
     ----------
@@ -692,26 +693,26 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
         [RA,DEC] coordinates in degrees for the second object (decimal, not sexagesimal) 
     pythag_approx : bool
         If True, use the pythagorean approximation for the distance. (WARNING! only 
-        approximately valid for very small distances, such as for small fits images.  
+        approximately valid for very small distances, such as for small fits images. 
         Likely to be deprecated in a future release.)
     returncomponents : bool or str
-        Valid options are 
-            1.)False or True (True defaults to option 2 below)
-            2.) 'cartesian' or 'RAcosDEC'
-            3.) 'spherical' or 'orthogonal'
+        Valid options are \n
+            1.)False or True (True defaults to option 2 below)\n
+            2.) 'cartesian' or 'RAcosDEC'\n
+            3.) 'spherical' or 'orthogonal'\n
         When set to False, only the total separation is returned.  The other options
-        will additionally return the component angular separations specified.
-        'cartesian' or 'RAcosDEC' will return the angular separations strictly
+        will additionally return the component angular separations specified. 
+        'cartesian' or 'RAcosDEC' will return the angular separations strictly 
         following the longitude and latitude lines.  i.e., the longitude component 
         will be along constant lat lines, but will be modified by the cosine(DEC) term. 
         'spherical' or 'orthogonal' will return the orthogonal components in spherical 
-        coordinates (i.e. when viewed from directly above) -- angles along great circles
-        in EACH direction.  The longitude/RA component here will not follow lines of
+        coordinates (i.e. when viewed from directly above) -- angles along great circles 
+        in EACH direction.  The longitude/RA component here will not follow lines of 
         constant DEC! 
     input_precision : numpy precision dtype
         The precision to use for the calculation.  Lower precision will consume less
         memory, but obviously at the expense of precision and potential for rounding 
-        errors.  For VERY small angles, if you are getting results smaller than your
+        errors.  For VERY small angles, if you are getting results smaller than your 
         desired precision, try increasing to np.float128.
         
     Returns 
@@ -721,41 +722,41 @@ def angulardistance(coords1_deg, coords2_deg, pythag_approx=False, returncompone
     
     Notes
     -----
-    This assumes coords1 and coords2 are in the SAME coordinate system/equinox/etc.!   \n
-    Don't mix ICRS and FK5 for example.  \n
-    For small separations (<~1deg), can approximate the result with a small correction  \n
+    This assumes coords1 and coords2 are in the SAME coordinate system/equinox/etc.!   
+    Don't mix ICRS and FK5 for example.  
+    For small separations (<~1deg), can approximate the result with a small correction  
     to the pythagorean formula: \n
        delta_RA=(RA1-RA2)*cos(DEC_average) \n
        delta_DEC=(DEC1-DEC2) \n
        total_sep=sqrt(delta_RA^2+delta_DEC^2) \n
-    Otherwise must use the full equation for arbitrary angular separation (central angle  \n
-    of great-circle distance) -- for RA mapped to [0,2pi], DEC to [-pi/2,+pi/2]): \n
-        ang.dist.=arccos( sin(DEC1)sin(DEC2)+cos(DEC1)COS(DEC2)cos(RA1-RA2) )\n
+    Otherwise must use the full equation for arbitrary angular separation (central angle  
+    of great-circle distance) -- for RA mapped to [0,2pi], DEC to [-pi/2,+pi/2]):  \n
+        ang.dist.=arccos( sin(DEC1)sin(DEC2)+cos(DEC1)COS(DEC2)cos(RA1-RA2) ) \n
     However, this standard equation may suffer from rounding errors at small angles.
-    For the particular case of equal major & minor axes (perfect sphere), a form that is \n
-    accurate for all angles and positions, including antipodes, is      angle = 
-          ( SQRT( (cos(DEC2)sin(RA1-RA2))^2 + (cos(DEC1)sin(DEC2)-sin(DEC1)cos(DEC2)cos(RA1-RA2))^2  )  )
-    arctan( ------------------------------------------------------------------------------------------  )
+    For the particular case of equal major & minor axes (perfect sphere), a form that is 
+    accurate for all angles and positions, including antipodes, is      angle = \n
+          ( SQRT( (cos(DEC2)sin(RA1-RA2))^2 + (cos(DEC1)sin(DEC2)-sin(DEC1)cos(DEC2)cos(RA1-RA2))^2  )  )\n
+    arctan( ------------------------------------------------------------------------------------------  )\n
           (               sin(DEC1)sin(DEC2)+cos(DEC1)cos(DEC2)cos(RA1-RA2)                             )
     
     Examples
     --------
     obs.angulardistance([146.4247680, -14.3262771], [150.4908485, 55.6797891])  
-    #--> 70.08988039585651 
+    #--> 70.08988039585651 \n
     obs.angulardistance([146.0, -14.0], [146.0 - 1e-12, -14.0 + 1e-11], input_precision=np.float128)
-    #--> 1.0045591516529160856e-11
+    #--> 1.0045591516529160856e-11\n
     obs.angulardistance([180., -10.], [160., 30.], returncomponents=True)  
-    #--> (44.38873913031471, -19.696155060244166, 40.0)
-    ### But note carefully the effect of cos(DEC), and !
+    #--> (44.38873913031471, -19.696155060244166, 40.0)\n
+    ### But note carefully the effect of cos(DEC)\n
     obs.angulardistance([120., 60.], [120., 0.], returncomponents='cartesian')
-    #--> (59.999999999999986, 0.0, -59.99999999999999)
+    #--> (59.999999999999986, 0.0, -59.99999999999999)\n
     obs.angulardistance([120., 60.], [100., 60.], returncomponents='cartesian')
-    #--> (9.961850643857742, -9.99999999999999, 0.0)
+    #--> (9.961850643857742, -9.99999999999999, 0.0)\n
     obs.angulardistance([120., 60.], [100., 60.], returncomponents='spherical')
     #--> (9.961850643857744, 9.961850643857813, 0.0)
-    #  DEC=60deg -> reduces 'simple' longitude diff of 20deg by ~ cos(pi/3)=0.5 
+    #  DEC=60deg -> reduces 'simple' longitude diff of 20deg by ~ cos(pi/3)=0.5   \n
     ### And note how a simple pythagorean approximation would give erroneous values
-    #   for the total separation.  
+    #   for the total separation.  \n
     obs.angulardistance([120., 60.], [100., 60.], returncomponents=True, pythag_approx=True)
     #--> array([ 10., -10.,   0.])
     """
@@ -851,7 +852,7 @@ def construct_datetime(listin,dtformat='time',timezone=None):
     dtformat : str
         'time', 'date', or 'datetime'/'dt'.  Denotes desired format.
     timezone : pytz.timezone, or datetime timezone string 
-        Accepts timezones in pytz.timezone format or datetime string format (standard
+        Accepts timezones in pytz.timezone format or datetime string format (standard 
         Olson database names such as 'US/Eastern', which will then be formed with pytz)
     
     Returns
@@ -913,7 +914,7 @@ def convert_ephem_datetime(ephem_date_in):
 def convert_ephem_observer_datetime(obsin):
     """
     Converts pyephem Observer().date object into formatted datetime.datetime 
-    object with pytz UTC timezone
+    object with pytz UTC timezone\n
     Not currently used; better to just use ephem.Date().datetime() 
     
     Parameters
@@ -1017,7 +1018,7 @@ def calculate_dt_utcoffset(datetime_aware):
     Parameters
     ----------
     datetime_in : datetime.datetime
-        dt.datetime format time in the local desired timezone. (If the tzinfo='UTC',
+        dt.datetime format time in the local desired timezone. (If the tzinfo='UTC', 
         the offset will naturally be 0)
     
     Returns
@@ -1681,7 +1682,7 @@ class Observer_with_timezone(ephem.Observer):
 
 def create_ephem_observer(namestring, longitude, latitude, elevation, decimal_format='deg', timezone=None):
     """
-    Convenience function to create a (lightly modified) ephem.Observer() object for a telescope location.  Atimezone attribute has been added to Observers created with this function.
+    Convenience function to create a (lightly modified) ephem.Observer() object for a telescope location.  A timezone attribute has been added to Observers created with this function.
     
     Parameters
     ----------
@@ -1698,7 +1699,7 @@ def create_ephem_observer(namestring, longitude, latitude, elevation, decimal_fo
         'deg'/'degrees' if the inputs are in degrees, or 'rad'/'radians' if the inputs are in 
         radians (which are the native float input format for pyephem Observer type)
     timezone : str, None
-        The name of the timezone (from the Olson database) corresponding to the Observer's location.  The timezone can be calculated automatically, using tzwhere, from the latitude and longitude, though this option can taka a few seconds.
+        The name of the timezone (from the Olson database) corresponding to the Observer's location.  The timezone can be calculated automatically, using timezonefinder/tzwhere, from the latitude and longitude, though this option can taka a few seconds.
     
     Returns
     -------
@@ -1746,7 +1747,7 @@ def create_ephem_observer(namestring, longitude, latitude, elevation, decimal_fo
 
 def autocalculate_observer_timezone(observer):
     """
-    Determine the local timezone from a pyephem Observer object, using tzwhere.  
+    Determine the local timezone from a pyephem Observer object, using timezonefinder (previous tzwhere implementation now deprecated).  
     
     Parameters
     ----------
@@ -1764,10 +1765,14 @@ def autocalculate_observer_timezone(observer):
     obs.autocalculate_observer_timezone(wht) \n
     # --> 'Atlantic/Canary'
     """
-    try: 
-        timezone = tzwhere.tzwhere().tzNameAt( observer.lat*180/np.pi, wrap_pm180(observer.lon*180/np.pi) )
-    except: 
-        timezone = tzwhere.tzwhere(forceTZ=True).tzNameAt( observer.lat*180/np.pi, wrap_pm180(observer.lon*180/np.pi), forceTZ=True)
+    tf = TimezoneFinder()
+    timezone = tf.timezone_at( lng=wrap_pm180(observer.lon*180/np.pi), lat=observer.lat*180/np.pi)
+    ## tzwhere v3.0.3 has some issues with current numpy and python 3.10. Deprecating in favor of 
+    #  timezonefinder, which works entirely offline.
+    #try: 
+    #    timezone = tzwhere.tzwhere().tzNameAt( observer.lat*180/np.pi, wrap_pm180(observer.lon*180/np.pi) )
+    #except: 
+    #    timezone = tzwhere.tzwhere(forceTZ=True).tzNameAt( observer.lat*180/np.pi, wrap_pm180(observer.lon*180/np.pi), forceTZ=True)
     return timezone
 
 def tz_from_observer(observer):
@@ -1784,7 +1789,7 @@ def tz_from_observer(observer):
     timezone : str
         The name of the local timezone (from the Olson database)
     """
-    #Use tzwhere to compute the timezone based on the observer lat/lon (input in degrees)
+    #Use timezonefinder to compute the timezone based on the observer lat/lon (input in degrees)
     try: 
         if observer.timezone is not None: timezone = observer.timezone
         else: timezone = autocalculate_observer_timezone(observer)
@@ -1862,9 +1867,9 @@ def calculate_twilight_times(obsframe,startdate,verbose=False):
     Example
     -------
     # Print times for the Crab Nebula observed from WHT on 2025/01/01 at 23:59:00 \n
-    wht = ephem.Observer()
-    wht.lat='28 45 37.7'; wht.lon='-17 52 53.8'; wht.elevation=2344
-    obstime='2025/01/01 23:59:00'
+    wht = ephem.Observer()\n
+    wht.lat='28 45 37.7'; wht.lon='-17 52 53.8'; wht.elevation=2344\n
+    obstime='2025/01/01 23:59:00'\n
     sunset,twi_civil,twi_naut,twi_astro = obs.calculate_twilight_times(wht,obstime)
     """
     tmpobsframe=obsframe.copy()
@@ -2855,7 +2860,7 @@ def compute_yearly_target_data(target, observer, obsyear, timezone='auto', time_
         Timezone (standard Olson names) for local time on upper x-axis.  Options: \n
             'none' or None : Do not add local time info to the upper axis
             string of a standard Olson database name [e.g., 'US/Mountain' or 'America/Chicago'] --  use this directly for dt calculations \n
-            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module tzwhere.  Takes a while (but is convenient!) 
+            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module timezonefinder.
     time_of_obs : str  ['noon', 'night', 'midnight', 'peak' or 'HH:MM:SS'] 
         Denotes how to generate the times to use for each day. Options: \n
             'noon' = calculate the values at 12:00 local time each day \n
@@ -3045,7 +3050,7 @@ def skysep_fixed_single(source1, source2, returncomponents=False, componentframe
     Calculate the angular separation on the sky (in degrees), for fixed pyephem 
     objects source1 and source2.  To calculate the angular distance between a 
     source and the Sun or moon, use sunsep_single() or moonsep_single() functions 
-    instead.
+    instead. \n
     To input simple coordinate values instead of pyephem objects, use 
     function angulardistance([lon1,lat1],[lon2,lat2]) instead.
     
@@ -3055,21 +3060,21 @@ def skysep_fixed_single(source1, source2, returncomponents=False, componentframe
     source2 : ephem.FixedBody() 
     returncomponents : bool
         Optinally also returns the component separations, to go 
-        from source1 to source2. Valid options are 
-            1.)False or True (True defaults to option 2 below)
-            2.) 'cartesian' or 'RAcosDEC'
-            3.) 'spherical' or 'orthogonal'
-        When set to False, only the total separation is returned.  The other options
-        will additionally return the component angular separations specified.
-        'cartesian' or 'RAcosDEC' will return the angular separations strictly
+        from source1 to source2. Valid options are \n
+            1.)False or True (True defaults to option 2 below)\n
+            2.) 'cartesian' or 'RAcosDEC'\n
+            3.) 'spherical' or 'orthogonal'\n
+        When set to False, only the total separation is returned.  The other options 
+        will additionally return the component angular separations specified. 
+        'cartesian' or 'RAcosDEC' will return the angular separations strictly 
         following the longitude and latitude lines.  i.e., the longitude component 
         will be along constant lat lines, but will be modified by the cosine(DEC) term. 
         'spherical' or 'orthogonal' will return the orthogonal components in spherical 
-        coordinates (i.e. when viewed from directly above) -- angles along great circles
+        coordinates (i.e. when viewed from directly above) -- angles along great circles 
         in EACH direction.  The longitude/RA component here will not follow lines of
         constant DEC! 
     componentframe : str, one of ['equatorial','galactic','ecliptic']
-        If returncomponents is set to True, this determines the components to
+        If returncomponents is set to True, this determines the components to 
         return -- [RA,DEC] for 'equatorial', [longitude,latitude] otherwise
     
     Returns
@@ -3081,26 +3086,26 @@ def skysep_fixed_single(source1, source2, returncomponents=False, componentframe
     
     Example
     -------
-    ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751') 
-    ngc3079=obs.create_ephem_target('NGC3079','10:01:57.80','55:40:47.24')  
-    obs.skysep_fixed_single(ngc1052,ngc3079)  #--> 108.13770035565858  [degrees]
-    ## Some examples for sources falling along a line of constant DEC 
-    src1 = obs.create_ephem_target('src1','01:00:00.0','-60:00:00.0') #[15.0,-60.0] in decimal
-    src2 = obs.create_ephem_target('src2','23:00:00.0','-60:00:00.0') #[345.0,-60.0] in decimal
-    obs.skysep_fixed_single(src1,src2, returncomponents='RAcosDEC') #or 'cartesian' gives same 
-    #--> (14.871642464356663, -14.999999999999986, 0.0)
-    ## Now return components in Ecliptic [lon,lat] angles -- noting slight difference in
-    # returned longitude values between 'spherical' and 'cartesian'
-    obs.skysep_fixed_single(src1,src2, returncomponents='spherical', componentframe='equatorial') 
-    #--> (14.871642464356663, -14.870944452263702, 0.0)
-    obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='equatorial') 
-    #--> (14.871642464356663, -14.999999999999986, 0.0)
-    ## Now return components in Galactic [l,b] angles
-    src1 = obs.create_ephem_target('src1','01:00:00.0','-30:00:00.0') #[15.0,-30.0] in decimal
-    src2 = obs.create_ephem_target('src2','23:00:00.0','-30:00:00.0') #[345.0,-30.0] in decimal
-    obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='galactic')   
-    #--> (25.90621437229111, 45.489777798143976, 21.14372563906864)
-    #   The components might 'seem' too high, but look at the Galactic coordinates of src1, src2:
+    ngc1052=obs.create_ephem_target('NGC1052','02:41:04.7985','-08:15:20.751') \n
+    ngc3079=obs.create_ephem_target('NGC3079','10:01:57.80','55:40:47.24')  \n
+    obs.skysep_fixed_single(ngc1052,ngc3079)  #--> 108.13770035565858  [degrees]\n
+    ## Some examples for sources falling along a line of constant DEC \n
+    src1 = obs.create_ephem_target('src1','01:00:00.0','-60:00:00.0') #[15.0,-60.0] in decimal \n
+    src2 = obs.create_ephem_target('src2','23:00:00.0','-60:00:00.0') #[345.0,-60.0] in decimal \n
+    obs.skysep_fixed_single(src1,src2, returncomponents='RAcosDEC') #or 'cartesian' gives same \n
+    #--> (14.871642464356663, -14.999999999999986, 0.0)  \n
+    ## Now return components in Ecliptic [lon,lat] angles -- noting slight difference in \n
+    # returned longitude values between 'spherical' and 'cartesian'  \n
+    obs.skysep_fixed_single(src1,src2, returncomponents='spherical', componentframe='equatorial') \n
+    #--> (14.871642464356663, -14.870944452263702, 0.0)  \n
+    obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='equatorial') \n
+    #--> (14.871642464356663, -14.999999999999986, 0.0)  \n
+    ## Now return components in Galactic [l,b] angles    \n
+    src1 = obs.create_ephem_target('src1','01:00:00.0','-30:00:00.0') #[15.0,-30.0] in decimal    \n
+    src2 = obs.create_ephem_target('src2','23:00:00.0','-30:00:00.0') #[345.0,-30.0] in decimal   \n
+    obs.skysep_fixed_single(src1,src2, returncomponents='cartesian', componentframe='galactic')   \n
+    #--> (25.90621437229111, 45.489777798143976, 21.14372563906864)  \n
+    #   The components might 'seem' too high, but look at the Galactic coordinates of src1, src2: \n
     #   [270.22743381 -86.56783073], [ 19.60461978 -65.4241051 ] 
     """
     ### Manual calculation:
@@ -3230,15 +3235,15 @@ def daily_moonseps(target,observer,tstart,tend, every_N_days=1, verbose=True):
     
     Example
     -------
-    #Print Moon separations at midnight for NGC6240 every 14 days in October 2023.
-    # Note that even though "tend" was given as 10/31, the final printed entry 
-    # is (14+14)=28 days after "tstart" on Oct.1, or 10/29.
-    ngc6240 = obs.create_ephem_target('NGC 6240','16:52:58.90','02:24:03.6')
-    obs.daily_moonseps(ngc6240, obs.vlbaBR, '2023/10/01 00:00:00', '2023/10/31 00:00:00', every_N_days=14)
-    #NGC 6240
-    #  On 2023/10/1 00:00:00, Sun separation = 132.3 deg
-    #  On 2023/10/15 00:00:00, Sun separation = 52.9 deg
-    #  On 2023/10/29 00:00:00, Sun separation = 138.5 deg
+    #Print Moon separations at midnight for NGC6240 every 14 days in October 2023. \n
+    # Note that even though "tend" was given as 10/31, the final printed entry \n
+    # is (14+14)=28 days after "tstart" on Oct.1, or 10/29. \n
+    ngc6240 = obs.create_ephem_target('NGC 6240','16:52:58.90','02:24:03.6') \n
+    obs.daily_moonseps(ngc6240, obs.vlbaBR, '2023/10/01 00:00:00', '2023/10/31 00:00:00', every_N_days=14) \n
+    #NGC 6240 \n
+    #  On 2023/10/1 00:00:00, Sun separation = 132.3 deg \n
+    #  On 2023/10/15 00:00:00, Sun separation = 52.9 deg \n
+    #  On 2023/10/29 00:00:00, Sun separation = 138.5 deg \n
     """
     simstart = ephem.Date(tstart); 
     simend = ephem.Date(tend); 
@@ -3391,14 +3396,14 @@ def daily_sunseps(target,observer,tstart,tend, every_N_days=1, verbose=True):
     
     Example
     -------
-    #Print Sun separations at noon for NGC6240 every 14 days in October 2023.
-    # Note that even though "tend" was given as 10/31, the final printed entry 
-    # is (14+14)=28 days after "tstart" on Oct.1, or 10/29.
-    ngc6240 = obs.create_ephem_target('NGC 6240','16:52:58.90','02:24:03.6')
-    obs.daily_sunseps(ngc6240, obs.vlbaBR, '2023/10/01 12:00:00', '2023/10/31 12:00:00', every_N_days=14)
-    #NGC 6240
-    #  On 2023/10/1 12:00:00, Sun separation = 66.3 deg
-    #  On 2023/10/15 12:00:00, Sun separation = 54.3 deg
+    #Print Sun separations at noon for NGC6240 every 14 days in October 2023. \n
+    # Note that even though "tend" was given as 10/31, the final printed entry \n
+    # is (14+14)=28 days after "tstart" on Oct.1, or 10/29. \n
+    ngc6240 = obs.create_ephem_target('NGC 6240','16:52:58.90','02:24:03.6') \n
+    obs.daily_sunseps(ngc6240, obs.vlbaBR, '2023/10/01 12:00:00', '2023/10/31 12:00:00', every_N_days=14) \n
+    #NGC 6240 \n
+    #  On 2023/10/1 12:00:00, Sun separation = 66.3 deg \n
+    #  On 2023/10/15 12:00:00, Sun separation = 54.3 deg \n
     #  On 2023/10/29 12:00:00, Sun separation = 42.8 deg
     """
     simstart = ephem.Date(tstart); 
@@ -3624,7 +3629,7 @@ def optimal_visibility_date(target, observer, obsyear, extra_info=True, verbose=
         Timezone (standard Olson names) for local time on upper x-axis.  Options: \n
             'none' or None : Do not add local time info to the upper axis
             string of a standard Olson database name [e.g., 'US/Mountain' or 'America/Chicago'] :  use this directly for dt calculations \n
-            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module tzwhere.  Takes a while (but is convenient!)
+            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module timezonefinder.
     time_of_obs : str  ['noon', 'night', 'midnight', 'peak' or 'HH:MM:SS'] 
         Denotes how to generate the times to use for each day. Options: \n
             'middark' = calculate the altitudes at each night's middle-dark time \n
@@ -3747,8 +3752,8 @@ def print_VLBA_observability_between_dates(obstarget, duration_hrs, ephemdatesta
     -------
     ngc2992=obs.create_ephem_target('NGC2992','09:45:42.05','-14:19:34.98')  \n
     obs.print_VLBA_observability_between_dates(ngc2992, 7.5, 
-        ephem.Date('2021/08/01 00:00:00'), ephem.Date('2021/08/31 23:59:59'), 
-        obstypestring='K-Band', every_N_days=1) \n
+    ephem.Date('2021/08/01 00:00:00'), ephem.Date('2021/08/31 23:59:59'), 
+    obstypestring='K-Band', every_N_days=1) 
     # --> \n
     # Aug 01  --  2021/08/01 16:19:42 UTC,  2021/08/01 05:49:11 LST \n
     # Aug 02  --  2021/08/02 16:15:46 UTC,  2021/08/02 05:49:11 LST \n
@@ -3802,20 +3807,20 @@ def print_VLBA_observability_summary(target, tstart, tend, every_N_days, t_middl
     Example
     -------
     ngc2992=obs.create_ephem_target('NGC2992','09:45:42.05','-14:19:34.98')  \n
-    # For 4 hour duration obs at 22GHz, print every 10 days for August 2021 
-    obs.print_VLBA_observability_summary(ngc2992, ephem.Date('2021/08/01 00:00:00'), 
-        ephem.Date('2021/08/31 23:59:59'), 10, ephem.Date('2021/08/15 00:00:00'), 
-        4.00, 22.0) \n
+    # For 4 hour duration obs at 22GHz, print every 10 days for August 2021 \n
+    obs.print_VLBA_observability_summary(ngc2992, ephem.Date('2021/08/01 00:00:00'), \n
+    ephem.Date('2021/08/31 23:59:59'), 10, ephem.Date('2021/08/15 00:00:00'), \n
+    4.00, 22.0) \n
     # --> \n
-    #Optimal VLBA observation start times between 2021 August 01 and 2021 August 31,
-    #for 4.00 hr duration K-band obs. of NGC2992:
-    #-----------------------------------------------------------------
-    #  Aug 01  --  2021/08/01 18:04:42 UTC,  2021/08/01 07:34:28 LST
-    #  Aug 11  --  2021/08/11 17:25:23 UTC,  2021/08/11 07:34:29 LST
-    #  Aug 21  --  2021/08/21 16:46:04 UTC,  2021/08/21 07:34:29 LST
-    #  Aug 31  --  2021/08/31 16:06:45 UTC,  2021/08/31 07:34:29 LST
-    #
-    #Estimated dynamical scheduling start times in PT_LST for 2021/8/15 :
+    #Optimal VLBA observation start times between 2021 August 01 and 2021 August 31,\n
+    #for 4.00 hr duration K-band obs. of NGC2992:\n
+    #-----------------------------------------------------------------\n
+    #  Aug 01  --  2021/08/01 18:04:42 UTC,  2021/08/01 07:34:28 LST\n
+    #  Aug 11  --  2021/08/11 17:25:23 UTC,  2021/08/11 07:34:29 LST\n
+    #  Aug 21  --  2021/08/21 16:46:04 UTC,  2021/08/21 07:34:29 LST\n
+    #  Aug 31  --  2021/08/31 16:06:45 UTC,  2021/08/31 07:34:29 LST\n
+    #\n
+    #Estimated dynamical scheduling start times in PT_LST for 2021/8/15 :\n
     #['2021/08/15 07:34:29', '2021/08/15 07:34:29']
     """
     simstart = ephem.Date(tstart); 
@@ -3840,18 +3845,18 @@ def query_object_coords_simbad(stringname, return_fmt='dec', results_ind=0, **kw
     Parameters
     ----------
     stringname : str
-        The common name of the desired query target. e.g., 'NGC1275'.  
+        The common name of the desired query target. e.g., 'NGC1275'.  \n
         To query the coordinates
     return_fmt : str
-        The desired format of the returned coordinates.
+        The desired format of the returned coordinates.\n
         'dec'/'decimal','sex'/'sexagesimal', or 'ap'/'astropy'.  
     results_ind : int
-        The index of the queried results to return, when there are multiple results.  
+        The index of the queried results to return, when there are multiple results.  \n
         Default is 0 (the first result)
     kwargs : 
-        Optional keyword arguments to pass to astroquery.Simbad. Currently, the valid ones are
-         wildcard = bool, default False.  When True it means the object stringname has wildacards.
-            For example, "m [1-9]" returns M1 through M9.
+        Optional keyword arguments to pass to astroquery.Simbad. Currently, the valid ones are\n
+         wildcard = bool, default False.  When True it means the object stringname has wildacards.\n
+            For example, "m [1-9]" returns M1 through M9.\n
          verbose = bool, default False. True prints query results to terminal.
     
     Returns
@@ -4228,15 +4233,15 @@ def calc_optimal_slew_loop(targets, optimize_by='separation', verbose=False, rep
         True sorts the list of permutations by cumulative separation.  Currently 
         only applies to verbose output.
     return_format : str
-        Valid options are
-        - 'names' for only the list of source names
-        - 'values' for the cumulative slew angles/times
+        Valid options are \n
+        - 'names' for only the list of source names\n
+        - 'values' for the cumulative slew angles/times\n
         - 'ephem' for list of ephem objects
     AZ_deg_min : float
-        Slew speed in telescope Azimuth axis, in degrees per minute.
+        Slew speed in telescope Azimuth axis, in degrees per minute. 
         Defaults to 90 deg/min, the nominal VLBA value in AZ.
     EL_deg_min float 
-        Slew speed in telescope Elevation axis, in degrees per minute.
+        Slew speed in telescope Elevation axis, in degrees per minute. 
         Defaults to 30 deg/min, the nominal VLBA value in EL. 
     set_first : None or string or ephem source.  
         If specified (other than None), only use permutations that start from 
@@ -4249,42 +4254,42 @@ def calc_optimal_slew_loop(targets, optimize_by='separation', verbose=False, rep
     Returns
     -------
     optimum_slew_loop : list
-        Depending on what is specified in return_format, the list will either contain
-        ephem objects, a list of strings for the names, or floats for the slew loop
+        Depending on what is specified in return_format, the list will either contain 
+        ephem objects, a list of strings for the names, or floats for the slew loop 
         durations. 
     
-    Example
-    -------
-    ngc6240 = obs.create_ephem_target('NGC 6240','16:52:58.90','02:24:03.6')  
-    J17353371p2047470 = obs.create_ephem_target('2MASX J17353371+2047470','17:35:33.76','20:47:47.0')  
-    CGCG341m006= obs.create_ephem_target('CGCG341-006','18:45:26.15','72:11:01.6')  
-    groupC = [ngc6240, J17353371p2047470, CGCG341m006, obs.SRC_3C345]
-    # Optimize purely by angular separation (not telescope slew speed)
-    calc_optimal_slew_loop(groupC, verbose=True, repeat_loop=True, sortloops=True, optimize_by='sep')
-    ## printed to screen:
-    #Permutations (repeating the loop)
-    #  ['NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006', '3C345']: cumulative distance = 146.7 deg
-    #  ['NGC 6240', '3C345', 'CGCG341-006', '2MASX J17353371+2047470']: cumulative distance = 146.7 deg
-    #  ['NGC 6240', '2MASX J17353371+2047470', '3C345', 'CGCG341-006']: cumulative distance = 150.9 deg
-    #  ['NGC 6240', 'CGCG341-006', '3C345', '2MASX J17353371+2047470']: cumulative distance = 150.9 deg
-    #  ['NGC 6240', 'CGCG341-006', '2MASX J17353371+2047470', '3C345']: cumulative distance = 183.9 deg
-    #  ['NGC 6240', '3C345', '2MASX J17353371+2047470', 'CGCG341-006']: cumulative distance = 183.9 deg
-    ##returned output:
-    #['NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006', '3C345']
-    #
-    # Now optimize by the time it takes to slew the telescope, using supplied 
-    # slew rates
+    Examples
+    --------
+    ngc6240 = obs.create_ephem_target('NGC 6240', '16:52:58.90', '02:24:03.6') \n
+    J17353371p2047470 = obs.create_ephem_target('2MASX J17353371+2047470', '17:35:33.76', '20:47:47.0') \n
+    CGCG341m006= obs.create_ephem_target('CGCG341-006', '18:45:26.15', '72:11:01.6') \n
+    groupC = [ngc6240, J17353371p2047470, CGCG341m006, obs.SRC_3C345] \n
+    # Optimize purely by angular separation (not telescope slew speed)\n
+    calc_optimal_slew_loop(groupC, verbose=True, repeat_loop=True, sortloops=True, optimize_by='sep') \n
+    ## printed to screen:\n
+    #Permutations (repeating the loop)\n
+    #  ['NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006', '3C345']: cumulative distance = 146.7 deg\n
+    #  ['NGC 6240', '3C345', 'CGCG341-006', '2MASX J17353371+2047470']: cumulative distance = 146.7 deg\n
+    #  ['NGC 6240', '2MASX J17353371+2047470', '3C345', 'CGCG341-006']: cumulative distance = 150.9 deg\n
+    #  ['NGC 6240', 'CGCG341-006', '3C345', '2MASX J17353371+2047470']: cumulative distance = 150.9 deg\n
+    #  ['NGC 6240', 'CGCG341-006', '2MASX J17353371+2047470', '3C345']: cumulative distance = 183.9 deg\n
+    #  ['NGC 6240', '3C345', '2MASX J17353371+2047470', 'CGCG341-006']: cumulative distance = 183.9 deg\n
+    ##returned output:\n
+    #['NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006', '3C345']\n
+    #\n
+    # Now optimize by the time it takes to slew the telescope, using supplied \n
+    # slew rates\n
     calc_optimal_slew_loop(groupC, verbose=True, repeat_loop=True, sortloops=True, 
-        optimize_by='time', set_first=obs.SRC_3C345, AZ_deg_min=90., EL_deg_min=30.)
-    ## printed to screen:
-    #Permutations (repeating the loop)
-    #  ['3C345', 'NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006']: 4.65 min.  (146.7 deg)
-    #  ['3C345', '2MASX J17353371+2047470', 'NGC 6240', 'CGCG341-006']: 4.65 min.  (150.9 deg)
-    #  ['3C345', 'CGCG341-006', '2MASX J17353371+2047470', 'NGC 6240']: 4.65 min.  (146.7 deg)
-    #  ['3C345', 'CGCG341-006', 'NGC 6240', '2MASX J17353371+2047470']: 4.65 min.  (150.9 deg)
-    #  ['3C345', '2MASX J17353371+2047470', 'CGCG341-006', 'NGC 6240']: 5.92 min.  (183.9 deg)
-    #  ['3C345', 'NGC 6240', 'CGCG341-006', '2MASX J17353371+2047470']: 5.92 min.  (183.9 deg)
-    ##returned output:
+    optimize_by='time', set_first=obs.SRC_3C345, AZ_deg_min=90., EL_deg_min=30.)\n
+    ## printed to screen:\n
+    #Permutations (repeating the loop)\n
+    #  ['3C345', 'NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006']: 4.65 min.  (146.7 deg)\n
+    #  ['3C345', '2MASX J17353371+2047470', 'NGC 6240', 'CGCG341-006']: 4.65 min.  (150.9 deg)\n
+    #  ['3C345', 'CGCG341-006', '2MASX J17353371+2047470', 'NGC 6240']: 4.65 min.  (146.7 deg)\n
+    #  ['3C345', 'CGCG341-006', 'NGC 6240', '2MASX J17353371+2047470']: 4.65 min.  (150.9 deg)\n
+    #  ['3C345', '2MASX J17353371+2047470', 'CGCG341-006', 'NGC 6240']: 5.92 min.  (183.9 deg)\n
+    #  ['3C345', 'NGC 6240', 'CGCG341-006', '2MASX J17353371+2047470']: 5.92 min.  (183.9 deg)\n
+    ##returned output:\n
     #['3C345', 'NGC 6240', '2MASX J17353371+2047470', 'CGCG341-006']
     """
     def unique_permutation_loops(perms, already_loop=True):
@@ -4390,7 +4395,7 @@ def plot_year_observability(target, observer, obsyear, timezone='auto', time_of_
         Timezone (standard Olson database names) for local time on upper x-axis.  Options: \n
             'none' or None : Do not add local time info to the upper axis
             string of a standard Olson database name [e.g., 'US/Mountain' or 'America/Chicago'] :  use this directly for dt calculations \n
-            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module tzwhere.  Takes a while (but is convenient!) 
+            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module timezonefinder.
     time_of_obs : str  ['noon', 'night', 'midnight', 'peak' or 'HH:MM:SS'] 
         Denotes how to generate the times to use for each day. Options: \n
             'middark' = calculate the altitudes at each night's middle-dark time \n
@@ -4519,7 +4524,7 @@ def plot_year_RST(target, observer, obsyear, timezone='auto', time_of_obs='night
         Timezone (standard Olson names) for local time on upper x-axis.  Options: \n
             'none' or None : Do not add local time info to the upper axis
             string of a standard Olson database name [e.g., 'US/Mountain' or 'America/Chicago'] :  use this directly for dt calculations \n
-            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module tzwhere.  Takes a while (but is convenient!)
+            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module timezonefinder.
     time_of_obs : str  ['noon', 'night', 'midnight', 'peak' or 'HH:MM:SS'] 
         Denotes how to generate the times to use for each day. Options: \n
             'noon' = calculate the values at 12:00 local time each day \n
@@ -4652,7 +4657,7 @@ def plot_year_darktime(target, observer, obsyear, timezone='auto', time_of_obs='
         Timezone (standard Olson names) for local time on upper x-axis.  Options: \n
             'none' or None : Do not add local time info to the upper axis
             string of a standard Olson database name [e.g., 'US/Mountain' or 'America/Chicago'] :  use this directly for dt calculations \n
-            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module tzwhere.  Takes a while (but is convenient!) 
+            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module timezonefinder.
     time_of_obs : str  ['noon', 'night', 'midnight', 'peak' or 'HH:MM:SS'] 
         Denotes how to generate the times to use for each day. Options: \n
             'noon' = calculate the values at 12:00 local time each day \n
@@ -4931,7 +4936,7 @@ def plot_observing_tracks(target_list, observer, obsstart, obsend, weights=None,
         Timezone (standard Olson names) for local time on upper x-axis.  Options: \n
             'none' or None : Do not add local time info to the upper axis
             string of a standard Olson database name [e.g., 'US/Mountain' or 'America/Chicago'] :  use this directly for dt calculations \n
-            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module tzwhere.  Takes a while (but is convenient!)
+            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module timezonefinder.
     n_steps : int 
         The number of positions to calculate in the altitude tracks
     simpletracks : bool 
@@ -5136,7 +5141,7 @@ def plot_visibility_tracks_toaxis(target_list, observer, obsstart, obsend, axin,
         Timezone (standard Olson names) for local time on upper x-axis.  Options: \n
             'none' or None : Do not add local time info to the upper axis
             string of a standard Olson database name [e.g., 'US/Mountain' or 'America/Chicago'] :  use this directly for dt calculations \n
-            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module tzwhere.  Takes a while (but is convenient!)
+            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module timezonefinder.
     xaxisformatter: mdates.DateFormatter
         Formatter object for the xaxis dates.  Default mdates.DateFormatter('%b') will print abbreviated month names, '%B' will print full month names.    
     
@@ -5266,7 +5271,7 @@ def plot_visibility_tracks(target_list,observer,obsstart,obsend, weights=None, m
         Timezone (standard Olson names) for local time on upper x-axis.  Options: \n
             'none' or None : Do not add local time info to the upper axis
             string of a standard Olson database name [e.g., 'US/Mountain' or 'America/Chicago'] :  use this directly for dt calculations \n
-            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module tzwhere.  Takes a while (but is convenient!)
+            'auto' or 'calculate' : compute the timezone from the observer lat/lon using module timezonefinder.
     xaxisformatter: mdates.DateFormatter
         Formatter object for the xaxis dates.  Default mdates.DateFormatter('%b') will print abbreviated month names, '%B' will print full month names.    
     figsize : tuple
@@ -5745,7 +5750,8 @@ def add_sizebar(axin, length_pixels, label, loc=4, sep=5, borderpad=0.8, frameon
 def bgpars2pix(arrin,headerin,precise=True):
     """
     Calculate ellipse region params in terms of image/pixel coordinates -- 
-    takes array [RA (dec), DEC (dec), Rmaj (deg), Rmin (deg), PA (deg., N from W)].
+    takes array \n
+    [RA (dec), DEC (dec), Rmaj (deg), Rmin (deg), PA (deg., N from W)]. \n
     Converts these angular (degree) RA,DEC,Rmaj,Rmin values to pixel values using the 
     supplied fits header.  Note the position angle follows the math definition 
     (CCW from x=0) not the astronomical convention (CCW from N).
@@ -5820,8 +5826,8 @@ def make_finder_plot_singleband(targetname, coords, boxwidth, survey='DSS2 Red',
     -------
     refstars=[['5:34:42.3','22:10:34.5','HD 244988'], ['5:34:36.6','21:37:19.9','HD 36707'],]
     obs.make_finder_plot_singleband('Crab Nebula', 'M1', 50., boxwidth_units='arcmin', 
-        survey='DSS2 Red', search_name=True, refregs=refstars, cmap='gist_yarg', dpi=200, 
-        tickcolor='0.2', mfc='r', mec='w', bs_amin=10., )
+    survey='DSS2 Red', search_name=True, refregs=refstars, cmap='gist_yarg', dpi=200,
+    tickcolor='0.2', mfc='r', mec='w', bs_amin=10., )
     """
     
     rcparams_initial = {'xtick.major.size':rcParams['xtick.major.size'], 'ytick.major.size':rcParams['ytick.major.size'], 'xtick.minor.size':rcParams['xtick.minor.size'], 'ytick.minor.size':rcParams['ytick.minor.size'], 'grid.linestyle':rcParams['grid.linestyle'], 'grid.linewidth':rcParams['grid.linewidth'], 'xtick.direction':rcParams['xtick.direction'], 'ytick.direction':rcParams['ytick.direction'], 'xtick.minor.visible':rcParams['xtick.minor.visible'], 'ytick.minor.visible':rcParams['ytick.minor.visible']}
@@ -6924,15 +6930,15 @@ def sources_within_radius(src_list, ref_pos, sep_deg, direction='inside', return
     
     Examples
     --------
-    virgo_targets = [obs.create_ephem_target(n,*obs.query_object_coords_simbad(n))
-                 for n in ['m87', 'm85', 'm60', 'm49', 'm90', 'm98']]
-    # Which of these sources are within 3 degrees of the Virgo cluster center?
-    obs.sources_within_radius(virgo_targets, ['12:27:00','12:43:00'], 3.0, 
-        direction='inside', return_format='names')
-    #--> ['m87', 'm90']
-    # Which of these Virgo sources are further than 4 degrees from M87?
-    obs.sources_within_radius(virgo_targets[1:], virgo_targets[0], 4.0, 
-        direction='outside', return_format='names')
+    virgo_targets = [ obs.create_ephem_target(n,*obs.query_object_coords_simbad(n)) \n
+    for n in ['m87', 'm85', 'm60', 'm49', 'm90', 'm98'] ]                           \n
+    # Which of these sources are within 3 degrees of the Virgo cluster center?      \n
+    obs.sources_within_radius(virgo_targets, ['12:27:00','12:43:00'], 3.0,          \n
+    direction='inside', return_format='names')                                      \n
+    #--> ['m87', 'm90']                                                             \n
+    # Which of these Virgo sources are further than 4 degrees from M87?             \n
+    obs.sources_within_radius(virgo_targets[1:], virgo_targets[0], 4.0,             \n
+    direction='outside', return_format='names')                                     \n
     #--> ['m85', 'm49', 'm98']
     """
     

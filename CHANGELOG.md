@@ -16,6 +16,7 @@
     - Added convenience function print_VLBA_observability_summary().  With minimal configuring, prints source observability every N days in the specified range, and also estimates start times dynamic scheduling.
     - Added convenience function eph2c() to take in an ephem source and output the RA,DEC coordinates. Output styles are degrees, radians, sexagesimal using obs.dec2sex and optional kwargs, or astropy.coordinates.SkyCoord
     - Update plot_visibility_tracks etc to have minor tick marks every 1 hrs on 24-hr dur plots
+    - package timezonefinder now used instead of tzwhere, as that was causing some core dumps in python 3.7 and issues with recent numpy versions in python 3.10. The timezone lookup functionality is entirely offline after it's installed.
 
 
 # 1.0

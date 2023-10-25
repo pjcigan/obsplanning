@@ -198,7 +198,7 @@ wht = obs.create_ephem_observer('WHT', '-17:52:53.8', '28:45:37.7', 2344, timezo
 wht = obs.create_ephem_observer('WHT', '-17:52:53.8', '28:45:37.7', 2344, timezone='calculate')
 ```
 
-As seen in the last example above, the timezone can be calculated automatically from the Observer's coordinates using tzwhere.  Users can determine the timezone for an Observer that is already defined (with or without timezone already set) with, e.g.:
+As seen in the last example above, the timezone can be calculated automatically from the Observer's coordinates using timezonefinder.  Users can determine the timezone for an Observer that is already defined (with or without timezone already set) with, e.g.:
 ```python
 obs.autocalculate_observer_timezone(wht)
 # --> 'Atlantic/Canary'
