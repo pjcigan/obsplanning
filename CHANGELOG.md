@@ -10,6 +10,7 @@
     - Changed name of plot_night_observing_tracks() to the slightly more general plot_observing_tracks() -- without the 'night'. And added new convenience function for plotting the nighttime version, called  plot_night_observing_tracks() , which simply sets light_fill=False
     - Also added convenience function for plot_day_observing_tracks, which simply calls plot_observing_tracks with light=True
     - Upgraded obs.skysep_fixed_single() to have an option to return the longitude/latitude components in addition to the total separation, like with obs.angulardistance.  Also added simple function wrap_pmPI() to wrap radian values to range +/- PI.  
+    - Added a more general query_object_coords() function.  Currently its options are to query with astropy or simbad.  query_object_coords_simbad updated.  Coordinates for both these functions can be returned as decimal, sexagesmial, or astropy SkyCoord. 
     - Added convenience functions to make a plot of sun(&moon) separations from a target source over the course of a specified year
     - Added convenience functions for printing daily sunseps and moonseps, with option to only print values for a candence of every N days
     - Added convenience function print_VLBA_observability_summary().  With minimal configuring, prints source observability every N days in the specified range, and also estimates start times dynamic scheduling.

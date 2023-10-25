@@ -57,6 +57,7 @@ import os
 from astroquery.skyview import SkyView
 from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
+#from astroquery.ipac.ned import Ned
 from astropy import coordinates
 from astropy.wcs import WCS 
 import astropy.units as u
@@ -3842,7 +3843,8 @@ def query_object_coords_simbad(stringname, return_fmt='dec', results_ind=0, **kw
         The common name of the desired query target. e.g., 'NGC1275'.  
         To query the coordinates
     return_fmt : str
-        'dec','decimal','sex', or 'sexagesimal'.  The desired format of the returned coordinates.
+        The desired format of the returned coordinates.
+        'dec'/'decimal','sex'/'sexagesimal', or 'ap'/'astropy'.  
     results_ind : int
         The index of the queried results to return, when there are multiple results.  
         Default is 0 (the first result)
@@ -3870,6 +3872,8 @@ def query_object_coords_simbad(stringname, return_fmt='dec', results_ind=0, **kw
     """
     #from astroquery.simbad import Simbad
     querytable=Simbad.query_object(stringname, **kwargs)
+    try: len(querytable)
+    except: raise Exception('simbad object query failed for name="%s".'%(stringname))
     if 'verbose' in kwargs: 
         #tbl=Simbad.query_object(...,verbose=True) doesn't print when set as object, 
         #so explicitly print the table to replicate the behavior
@@ -3880,7 +3884,69 @@ def query_object_coords_simbad(stringname, return_fmt='dec', results_ind=0, **kw
         return targetcoords_dec
     elif 'sex' in return_fmt.lower():
         return targetcoords_sex
+    elif return_fmt.lower() in ['ap','astropy','sc','skycoord']:
+        return coordinates.SkyCoord(*targetcoords_sex, unit='deg')
 
+#def query_object_coords_ned(stringname, return_fmt='dec', results_ind=0, **kwargs):
+#    ...
+
+def query_object_coords(stringname, service='astropy', return_fmt='dec', results_ind=0, **kwargs):
+    """
+    Query online service for coordinates of a named target.
+    
+    Note
+    ----
+    Internet connection required to complete the query.
+    
+    Parameters
+    ----------
+    stringname : str
+        The common name of the desired query target. e.g., 'NGC1275'.  
+        To query the coordinates
+    service: str
+        The service to query.  Current options are 'astropy', or 'simbad'
+    return_fmt : str
+        The desired format of the returned coordinates.
+        'dec'/'decimal','sex'/'sexagesimal', or 'SkyCoord'/'astropy'.  
+    results_ind : int
+        The index of the queried results to return, when there are multiple results.  
+        Default is 0 (the first result)
+    kwargs : 
+        Optional keyword arguments to pass to the query service. 
+        e.g., for 'simbad': wildcard(bool), verbose(bool)
+        for astropy: frame(str), parse(bool), cache(bool)
+    
+    Returns
+    -------
+    targetcoords : list, or astroopy.coordinates.SkyCoord
+        List of the [RA,DEC] of the queried target, or SkyCoord object
+    
+    Example
+    -------
+    obs.query_object_coords('M1', service='astropy', return_fmt='dec') \n
+    # --> -->  [83.63308333333333, 22.0145] \n
+    obs.query_object_coords_simbad('NGC1275',return_fmt='sex') \n
+    # -->  ['03 19 48.1597', '+41 30 42.114']
+    #
+    ## Example using keyword args from astroquery Simbad docs, and returning the 
+    #  resulting table entry index 2 (the third entry):
+    obs.query_object_coords_simbad("m [1-9]", wildcard=True, verbose=True, results_ind=2)
+    """
+    if 'sim' in service.lower():
+        return query_object_coords_simbad(stringname, return_fmt=return_fmt, results_ind=results_ind, **kwargs)
+    elif service.lower()=='astropy' or service.lower()=='ap':
+        try: 
+            queried_coords = coordinates.SkyCoord.from_name(stringname, **kwargs)
+        except:
+            raise Exception('astropy object query failed for name="%s".'%(stringname))
+        if 'dec' in return_fmt.lower(): 
+            return [queried_coords.ra.deg, queried_coords.dec.deg]
+        elif 'sex' in return_fmt.lower():
+            return queried_coords.to_string('dms', sep=':')
+        elif return_fmt.lower() in ['ap','astropy','sc','skycoord']:
+            return queried_coords
+    else: 
+        raise Exception('obs.query_object_coords: invalid choice service="%s". Choose from ["simbad", "astropy"]'%(service))
 
 def get_visible_targets_from_source_list(observer, time_start, time_end, source_list, elevation_limit=15., decbin_limits_deg=[-90,90], minimum_observability_minutes='full', coord_format='dec', skip_header=0, delimiter=',', nsteps=100, decimal_format='deg'):
     """

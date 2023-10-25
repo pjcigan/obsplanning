@@ -290,10 +290,23 @@ obs.ephemeris_report(crab, wht, '2025/01/01 23:59:00')
 
 #### Querying Coordinates
 
-What if you don't know your source coordinates, or you want to check against 'standard' catalog positions?  obsplanning has a convenience function ```query_object_coords_simbad()``` to quickly do just that by querying the Simbad service over the internet.  By default, the queried coordinates are returned in decimal format (for use in calculations), but you can specify to return them as their native sexagesimal strings.
+What if you don't know your source coordinates, or you want to check against 'standard' catalog positions?  obsplanning has convenience functions ```query_object_coords()``` and ```query_object_coords_simbad()``` to quickly do just that by querying the astropy or Simbad service over the internet.  By default, the queried coordinates are returned in decimal format (for use in calculations), but you can specify to return them as sexagesimal strings or astropy SkyCoord with the keyword ```return_fmt```.
 
 ```python
-# Look up the Simbad coordinates for the Crab Nebula
+# Simple coordinate query for the Crab Nebula
+obs.query_object_coords('M1') #, service='astropy', return_fmt='dec')
+# --> [83.6287, 22.0147]
+obs.query_object_coords('M1', service='simbad', return_fmt='dec')
+# --> [83.62875, 22.014722222222222]
+
+obs.query_object_coords('M1', return_fmt='sex')
+#--> '83:37:43.32 22:00:52.92'
+obs.query_object_coords('M1', return_fmt='skycoord')
+#--> <SkyCoord (ICRS): (ra, dec) in deg
+#        (83.6287, 22.0147)>
+
+
+# Look up the Simbad coordinates for the Crab Nebula with query_object_coords_simbad
 # -- by default the coordinates are returned in ICRS decimal format.
 
 obs.query_object_coords_simbad('M1') #, return_fmt='dec')
@@ -310,7 +323,7 @@ obs.query_object_coords_simbad('M1', return_fmt='sex')
 # details to terminal, and return 3rd entry from the resulting table
 # (use_entry = 2, since python is zero-indexed)
 
-query_object_coords_simbad("m [1-9]", wildcard=True, verbose=True, use_entry=2)
+obs.query_object_coords_simbad("m [1-9]", wildcard=True, verbose=True, use_entry=2)
 
 # MAIN_ID       RA         DEC     RA_PREC DEC_PREC ... COO_QUAL COO_WAVELENGTH     COO_BIBCODE     SCRIPT_NUMBER_ID
 #            "h:m:s"     "d:m:s"                    ...                                                             
@@ -328,7 +341,7 @@ query_object_coords_simbad("m [1-9]", wildcard=True, verbose=True, use_entry=2)
 # [205.54841666666667, 28.377277777777778]
 ```
 
-At the moment, only Simbad queries by target name are implemented here; in the future other query services will be added. Under the hood, this is simply calling ```astroquery.simbad.Simbad.query_object(stringname, **kwargs)```, so you can alternatively call astroquery manually with other services like NED or many others of your choice.  
+At the moment, only astropy and Simbad queries by target name are implemented here; in the future other query services will be added. Under the hood, this is simply calling ```astroquery.simbad.Simbad.query_object(stringname, **kwargs)``` or ```SkyCoord.from_name(stringname, **kwargs)```, so you can alternatively call these functions manually with other services like NED or many others of your choice, and to get more customization.  
 
 
 
