@@ -83,6 +83,7 @@ obs.plot_sunseps_year(ngc1052, obs.vlbaBR, 2021, min_sep_val=42., min_sep_type='
     savepath='./sunseps_all_ngc1052_2021.jpg', moon=True)
 ```
 ![Good for most of the year...](../images/sunseps_all_ngc1052_2021.jpg "NGC 1052, separations from Sun in 2021")
+
 Note that the minor ticks on the x (time) axis are 7-day increments from the start of the month.
 
 The horizontal dashed line specified here is at 42 degrees, the minimum required separation for L-band observations.  This shows that as far as Sun separation goes, you can observe at L-band any time except for roughly March through June.

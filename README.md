@@ -92,6 +92,7 @@ Determine observability of objects in the sky from your observatory, and produce
 - Transit time and target visibility calculations for single telescopes or multiple stations (VLBI/VLBA)
 - Simple selection of observable targets from source lists, based on their coordinates.
 - Miscellaneous coordinate handling, radio astronomy info, and other helpful functions
+- Many pre-defined observing sites and celestial sources for convenience
 
 
 

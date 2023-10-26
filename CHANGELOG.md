@@ -17,6 +17,7 @@
     - Added convenience function eph2c() to take in an ephem source and output the RA,DEC coordinates. Output styles are degrees, radians, sexagesimal using obs.dec2sex and optional kwargs, or astropy.coordinates.SkyCoord
     - Update plot_visibility_tracks etc to have minor tick marks every 1 hrs on 24-hr dur plots
     - package timezonefinder now used instead of tzwhere, as that was causing some core dumps in python 3.7 and issues with recent numpy versions in python 3.10. The timezone lookup functionality is entirely offline after it's installed.
+    - Added many more pre-defined Observer objects for optical, infrared, submm, and radio telescopes across the globe.  Includes IVS/VLBI stations that participate in global astrometric/geodetic sessions.
 
 
 # 1.0
