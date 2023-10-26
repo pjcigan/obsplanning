@@ -9,4 +9,5 @@ scipy
 tqdm==4.64.1
 astroquery==0.4.6
 myst_parser
+sphinx_rtd_theme
 obsplanning
