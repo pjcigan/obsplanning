@@ -16,7 +16,7 @@ import obsplanning as obs
 ```
 
 
-### Observers (telscope sites)
+## Observers (telscope sites)
 
 To start things off, here's a look at how telescope or observatory objects are created in obsplanning.  As an example, we will plan a set of observations of the Crab Nebula from the William Herschel Telescope on lovely La Palma.  The WHT is located at -17:52:53.8 East in longitude, +28:45:37.7 in latitude, and at an elevation of 2344 meters:
 ```python
@@ -43,7 +43,7 @@ print(wht.lat,wht.lon)
 
 
 
-### Dates
+## Dates
 
 Internal calculations involving dates & times are mainly performed on ephem.Date() objects.  The common datetime.datetime format can also be used for input, as well as strings formatted as 'YYYY/MM/DD HH:MM:SS.s' which are automatically parsed by pyephem.  Internally, the date info in an ephem.Date object is stored as a floating point number, which is the Dublin Julian Date (days since 1899 Dec. 31 at noon).  The date/time can then be returned from the object in a variety of formats.
 
@@ -132,7 +132,7 @@ obs.compute_moonphase('2024/12/30 23:59:00',return_fmt='name')
 
 
 
-#### Local time & timezone-aware datetimes
+### Local time & timezone-aware datetimes
 
 The dates and times internally stored in ephem.Date objects are not timezone-aware.  That is, input times are assumed to be UTC.  Local timezone information _can_ be incorporated for input by using pytz with datetime.datetime. A standard datetime.datetime object defaults to UTC, but timezones can be applied with either pytz builtin defined objects or a standard Olson database timezone name (e.g., 'US/Mountain' or 'America/Chicago'), which will be resolved by pytz.  
 ```python
@@ -183,7 +183,7 @@ obs.dtaware_to_ephem(obsstart_local)
 You can now supply these timezone-aware datetime objects to any functions that accept datetime format, or convert the tz-aware dt to ephem.Date format as shown above, if you prefer to supply local times instead of UTC.
 
 
-#### Making Observers timezone-aware
+### Making Observers timezone-aware
 
 Observers created using obsplanning.create\_ephem\_observer() actually use a slightly modified ("decorated" in python parlance) version of the standard ephem.Observer, now including an additional optional attribute called timezone.  This information is used in several plotting functions for displaying local time. Timezones can be included on creation as follows:
 ```python
@@ -210,7 +210,7 @@ The autocalculate\_observer\_timezone() function also works on standard ephem.Ob
 
 
 
-#### Extra timezone utilities:
+### Extra timezone utilities:
 
 Calculate the UTC offset of a particular timezone at the current time (also accounts for daylight savings).
 ```python
@@ -245,7 +245,7 @@ obsstart_local.tzinfo.zone
 
 
 
-### Astronomical targets
+## Astronomical targets
 
 Astronomical sources or targets are handled internally in obsplanning with ephem.FixedBody objects.  Let's take, for example, the Crab Nebula or M1, with RA,DEC = \[05:34:31.94, 22:00:52.2\].  Create the target object easily from RA and DEC coordinates like so:
 
@@ -288,7 +288,7 @@ obs.ephemeris_report(crab, wht, '2025/01/01 23:59:00')
 ```
 
 
-#### Querying Coordinates
+### Querying Coordinates
 
 What if you don't know your source coordinates, or you want to check against 'standard' catalog positions?  obsplanning has convenience functions ```query_object_coords()``` and ```query_object_coords_simbad()``` to quickly do just that by querying the astropy or Simbad service over the internet.  By default, the queried coordinates are returned in decimal format (for use in calculations), but you can specify to return them as sexagesimal strings or astropy SkyCoord with the keyword ```return_fmt```.
 
@@ -345,7 +345,7 @@ At the moment, only astropy and Simbad queries by target name are implemented he
 
 
 
-##### Converting Coordinates
+## Converting Coordinates
 
 
 The equatorial coordinates are already accessible with target.ra and target.dec (or target.g_ra, target.g_dec), but an ephem.Equatorial class also exists, which is useful for calculations at a specific epoch:
@@ -431,7 +431,7 @@ By default this returns the astrometric/absolute coordinates stored in the objec
 
 
 
-### Various calculations and tools
+## Various calculations and tools
 
 Building on the basic functionality outlined above, let's explore some of the tools for producing useful information for observations.
 
@@ -450,7 +450,7 @@ print('Start at %s, end at %s'%(ephem.date(obsstart),ephem.date(obsend)))
 # Start at 2025/1/1 18:54:27, end at 2025/1/2 07:36:20
 ```
 
-##### Source Elevation (Rise, Set, Transit times)
+### Source Elevation (Rise, Set, Transit times)
 
 Calculate the rise, set, and transit times of the target, from the viewpoint of the specified observatory.
 ```python
@@ -485,7 +485,7 @@ times_sidereal = obs.compute_sidereal_times(wht, obsstart, obsend, nsteps=200) #
 ```
 
 
-##### Separations Between Sources
+### Separations Between Sources
 
 Calculate the angular separation or distance on the sky from a target and the Moon, for the specified time.
 ```python
@@ -571,7 +571,7 @@ print( np.degrees([ephem.Ecliptic(src2).lon,ephem.Ecliptic(src2).lat]) )
 There are also helper functions ```vincenty_sphere()``` and ```angulardistance()``` for computing separations with inputs given as simple floats rather than ephem objects.  See their API entries for more details.  
 
 
-##### Searching for sources within a radius
+### Searching for sources within a radius
 
 There are two simple cone search functions in obsplanning, for determining which sources from an array fall within a specified separation radius on the sky.  ```sources_within_radius()``` will take a list (or tuple, array...) of ephem targets, and a reference position (which can be an ephem target, an astropy SkyCoord, or a list of [RA,DEC] values that can be parsed by ephem).  The reference position can be an ephem.Sun or Moon instance, as long as it has been instantiated and updated with time and Observer using .compute(). You can request output as the list of ephem sources themselves, just the names, the indices for the valid sources, or the numpy mask that would return the valid list -- which can be useful in scripting.  Here is an example for a handful of bright Messier sources in the Virgo cluster.
 ```python
@@ -661,7 +661,7 @@ obs.srctable_within_radius(virgo_table, ref_crd, 3.0)
 This function may be useful for simple selections of sources from lists such as the Gaia or ICRF3 catalogs.
 
 
-##### Nearest source from a list
+### Nearest source from a list
 
 If you have a list of, e.g., potential calibrator targets and want to determine which of them is closest to your science target, this can be determined easily like in the following example that calculates the nearest of a set of standard calibrators to NGC 1052.  
 ```python
@@ -693,7 +693,7 @@ As seen in the example above, obsplanning has several common radio calibrator ob
 
 
 
-##### Calculating Optimal Slew Ordering
+### Calculating Optimal Slew Ordering
 
 Telescopes take time to change their pointing on the sky, and for those that have slow motors, this can be a significant addition to your overhead.  If you need to observe several sources over the course of one observing session, taking care to observe them in a speedy order can save you valuable time that can be better used integrating on your science targets.  This compounds if you need to make several passes at targets in a loop. You can use obsplanning to determine the optimal order in which to observe a list of targets, to make efficient use of your telescope time.  
 

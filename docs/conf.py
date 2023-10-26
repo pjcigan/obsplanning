@@ -52,7 +52,8 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'recommonmark',
+    #'recommonmark', #now deprecated.  Use myst_parser instead.
+    'myst_parser',
     'sphinx.ext.napoleon',
 ]
 

@@ -20,7 +20,7 @@ This example will demonstrate how to use obsplanning to do various things relate
 -----------------------
 
 
-### Altitude plots and optimal times
+## Altitude plots and optimal times
 
 First, some setup - importing packages.
 
@@ -343,7 +343,7 @@ obs.nearest_from_target_list( ngc1052, [obs.SRC_DA193,obs.SRC_3C286,obs.SRC_3C27
 -----------------------
 
 
-### Sensitivity calculations and other radio tools
+## Sensitivity calculations and other radio tools
 
 Some basic sensitivity calculation functions are available. As an example:
 
@@ -420,7 +420,7 @@ for f in sorted(glob('/some/directory/with/idifits/')):
 -----------------------
 
 
-### Optimal order for slewing between sources
+## Optimal order for slewing between sources
 
 Let's look at an example of observing a handful of bright galaxies at a similar RA as Andromeda.  Let's use the automatic coordinate query function for this example, and use dec2sex to explicitly to format the coordinate output.
 ```python
